@@ -172,6 +172,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Route với path parameters year/month
+  app.get("/api/expenses/:year/:month", requireAuth, async (req, res) => {
+    try {
+      const year = parseInt(req.params.year);
+      const month = parseInt(req.params.month);
+      const expenses = await storage.getExpenses(year, month);
+      res.json(expenses);
+    } catch (error) {
+      console.error("Error getting expenses by year/month:", error);
+      res.status(500).json({ message: "Lỗi khi lấy dữ liệu chi phí" });
+    }
+  });
+
   app.get("/api/expenses/summary", requireAuth, async (req, res) => {
     try {
       const summary = await storage.getExpenseSummary();

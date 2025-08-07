@@ -64,6 +64,8 @@ export default function MonthlyExpenses() {
     queryKey: [`/api/expenses/${selectedYear}/${selectedMonth}`],
   });
 
+
+
   const { data: systemSettings = [] } = useQuery<SystemSetting[]>({
     queryKey: ["/api/settings/system"],
   });
@@ -101,27 +103,27 @@ export default function MonthlyExpenses() {
 
 
 
-  // Calculate summary data
+  // Calculate summary data - Không cần filter vì API đã filter theo year/month
   const calculateSummary = () => {
-    const filteredExpenses = Array.isArray(expenses) ? expenses.filter((expense: Expense) => 
-      expense.year === selectedYear && expense.month === selectedMonth
-    ) : [];
+    const expensesData = Array.isArray(expenses) ? expenses : [];
+    
+
     
 
 
-    const salaryTotal = filteredExpenses
+    const salaryTotal = expensesData
       .filter((e: Expense) => e.category === "staff_salary")
       .reduce((sum: number, e: Expense) => sum + parseFloat(e.amount), 0);
 
-    const materialsTotal = filteredExpenses
+    const materialsTotal = expensesData
       .filter((e: Expense) => e.category === "ingredients")
       .reduce((sum: number, e: Expense) => sum + parseFloat(e.amount), 0);
 
-    const fixedTotal = filteredExpenses
+    const fixedTotal = expensesData
       .filter((e: Expense) => e.category === "fixed")
       .reduce((sum: number, e: Expense) => sum + parseFloat(e.amount), 0);
 
-    const variableTotal = filteredExpenses
+    const variableTotal = expensesData
       .filter((e: Expense) => e.category === "additional")
       .reduce((sum: number, e: Expense) => sum + parseFloat(e.amount), 0);
 
@@ -137,6 +139,9 @@ export default function MonthlyExpenses() {
   };
 
   const summary = calculateSummary();
+  
+  // Dữ liệu expenses đã được filter từ API
+  const filteredExpenses = Array.isArray(expenses) ? expenses : [];
 
   // Mutations
   const createMutation = useMutation({
@@ -297,20 +302,14 @@ export default function MonthlyExpenses() {
   };
 
   const toggleSelectAll = () => {
-    const filteredExpenses = Array.isArray(expenses) ? expenses.filter((expense: Expense) => 
-      expense.year === selectedYear && expense.month === selectedMonth
-    ) : [];
+    const expensesForToggle = Array.isArray(expenses) ? expenses : [];
     
-    if (selectedExpenses.length === filteredExpenses.length) {
+    if (selectedExpenses.length === expensesForToggle.length) {
       setSelectedExpenses([]);
     } else {
-      setSelectedExpenses(filteredExpenses.map((e: Expense) => e.id));
+      setSelectedExpenses(expensesForToggle.map((e: Expense) => e.id));
     }
   };
-
-  const filteredExpenses = Array.isArray(expenses) ? expenses.filter((expense: Expense) => 
-    expense.year === selectedYear && expense.month === selectedMonth
-  ) : [];
 
   if (isLoading) {
     return (
