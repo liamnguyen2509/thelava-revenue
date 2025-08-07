@@ -346,6 +346,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const settings = await storage.getSystemSettings();
       res.json(settings);
     } catch (error) {
+      console.error("Error in getSystemSettings:", error);
       res.status(500).json({ message: "Lỗi khi lấy cài đặt hệ thống" });
     }
   });

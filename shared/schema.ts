@@ -108,10 +108,11 @@ export const branches = pgTable("branches", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const systemSettings = pgTable("system_settings", {
+export const systemSettings = pgTable("general_settings", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   key: text("key").notNull().unique(),
-  value: text("value").notNull(),
+  value: text("value"),
+  createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
@@ -183,6 +184,7 @@ export const insertBranchSchema = createInsertSchema(branches).omit({
 
 export const insertSystemSettingSchema = createInsertSchema(systemSettings).omit({
   id: true,
+  createdAt: true,
   updatedAt: true,
 });
 
