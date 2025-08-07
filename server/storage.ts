@@ -27,6 +27,9 @@ interface IStorage {
   createStockTransaction(insertStockTransaction: InsertStockTransaction): Promise<StockTransaction>;
   getAllocationAccounts(): Promise<AllocationAccount[]>;
   createAllocationAccount(insertAllocationAccount: InsertAllocationAccount): Promise<AllocationAccount>;
+  getReserveAllocations(year: number, month?: number): Promise<ReserveAllocation[]>;
+  createReserveAllocation(insertReserveAllocation: InsertReserveAllocation): Promise<ReserveAllocation>;
+  getReserveAllocationsSummary(): Promise<{ total: number; byAccount: { [key: string]: number } }>;
   getShareholders(): Promise<Shareholder[]>;
   createShareholder(insertShareholder: InsertShareholder): Promise<Shareholder>;
   getExpenseCategories(): Promise<ExpenseCategory[]>;
@@ -166,6 +169,38 @@ export class DatabaseStorage implements IStorage {
       .values(insertExpenseCategory)
       .returning();
     return category;
+  }
+
+  async getReserveAllocations(year: number, month?: number): Promise<ReserveAllocation[]> {
+    if (month) {
+      return await db.select().from(reserveAllocations)
+        .where(and(eq(reserveAllocations.year, year), eq(reserveAllocations.month, month)));
+    }
+    return await db.select().from(reserveAllocations).where(eq(reserveAllocations.year, year));
+  }
+
+  async createReserveAllocation(insertReserveAllocation: InsertReserveAllocation): Promise<ReserveAllocation> {
+    const [allocation] = await db
+      .insert(reserveAllocations)
+      .values(insertReserveAllocation)
+      .returning();
+    return allocation;
+  }
+
+  async getReserveAllocationsSummary(): Promise<{ total: number; byAccount: { [key: string]: number } }> {
+    const currentYear = new Date().getFullYear();
+    const allocations = await this.getReserveAllocations(currentYear);
+    
+    const total = allocations.reduce((sum: number, allocation: ReserveAllocation) => 
+      sum + parseFloat(allocation.amount), 0);
+    
+    const byAccount: { [key: string]: number } = {};
+    allocations.forEach((allocation: ReserveAllocation) => {
+      const accountType = allocation.accountType;
+      byAccount[accountType] = (byAccount[accountType] || 0) + parseFloat(allocation.amount);
+    });
+    
+    return { total, byAccount };
   }
 
   async getDashboardData(): Promise<any> {

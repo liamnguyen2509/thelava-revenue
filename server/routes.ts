@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, loginSchema, insertRevenueSchema, insertExpenseSchema, insertStockItemSchema, insertStockTransactionSchema, insertAllocationAccountSchema, insertShareholderSchema, insertExpenseCategorySchema } from "@shared/schema";
+import { insertUserSchema, loginSchema, insertRevenueSchema, insertExpenseSchema, insertStockItemSchema, insertStockTransactionSchema, insertAllocationAccountSchema, insertShareholderSchema, insertExpenseCategorySchema, insertReserveAllocationSchema } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import session from "express-session";
 import { Pool } from "@neondatabase/serverless";
@@ -180,6 +180,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(transaction);
     } catch (error) {
       res.status(400).json({ message: "Dữ liệu giao dịch không hợp lệ" });
+    }
+  });
+
+  // Reserve allocation routes
+  app.get("/api/reserve-allocations", requireAuth, async (req, res) => {
+    try {
+      const year = req.query.year ? parseInt(req.query.year as string) : new Date().getFullYear();
+      const month = req.query.month ? parseInt(req.query.month as string) : undefined;
+      const allocations = await storage.getReserveAllocations(year, month);
+      res.json(allocations);
+    } catch (error) {
+      res.status(500).json({ message: "Lỗi khi lấy dữ liệu phân bổ quỹ dự trữ" });
+    }
+  });
+
+  app.post("/api/reserve-allocations", requireAuth, async (req, res) => {
+    try {
+      const allocationData = insertReserveAllocationSchema.parse(req.body);
+      const allocation = await storage.createReserveAllocation(allocationData);
+      res.json(allocation);
+    } catch (error) {
+      res.status(400).json({ message: "Dữ liệu phân bổ quỹ dự trữ không hợp lệ" });
+    }
+  });
+
+  app.get("/api/reserve-allocations/summary", requireAuth, async (req, res) => {
+    try {
+      const summary = await storage.getReserveAllocationsSummary();
+      res.json(summary);
+    } catch (error) {
+      res.status(500).json({ message: "Lỗi khi lấy tổng quan phân bổ quỹ dự trữ" });
     }
   });
 
