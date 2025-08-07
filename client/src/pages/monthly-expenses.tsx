@@ -62,7 +62,6 @@ export default function MonthlyExpenses() {
   // Fetch data
   const { data: expenses = [], isLoading } = useQuery<Expense[]>({
     queryKey: ["/api/expenses", selectedYear, selectedMonth],
-    queryFn: () => apiRequest(`/api/expenses?year=${selectedYear}&month=${selectedMonth}`),
   });
 
   const { data: systemSettings = [] } = useQuery<SystemSetting[]>({
@@ -102,25 +101,25 @@ export default function MonthlyExpenses() {
 
   // Calculate summary data
   const calculateSummary = () => {
-    const filteredExpenses = expenses.filter(expense => 
+    const filteredExpenses = Array.isArray(expenses) ? expenses.filter((expense: Expense) => 
       expense.year === selectedYear && expense.month === selectedMonth
-    );
+    ) : [];
 
     const salaryTotal = filteredExpenses
-      .filter(e => e.category === "Lương nhân viên")
-      .reduce((sum, e) => sum + parseFloat(e.amount), 0);
+      .filter((e: Expense) => e.category === "staff_salary")
+      .reduce((sum: number, e: Expense) => sum + parseFloat(e.amount), 0);
 
     const materialsTotal = filteredExpenses
-      .filter(e => e.category === "Nguyên phụ liệu")
-      .reduce((sum, e) => sum + parseFloat(e.amount), 0);
+      .filter((e: Expense) => e.category === "ingredients")
+      .reduce((sum: number, e: Expense) => sum + parseFloat(e.amount), 0);
 
     const fixedTotal = filteredExpenses
-      .filter(e => e.category === "Chi phí cố định")
-      .reduce((sum, e) => sum + parseFloat(e.amount), 0);
+      .filter((e: Expense) => e.category === "fixed")
+      .reduce((sum: number, e: Expense) => sum + parseFloat(e.amount), 0);
 
     const variableTotal = filteredExpenses
-      .filter(e => e.category === "Chi phí phát sinh")
-      .reduce((sum, e) => sum + parseFloat(e.amount), 0);
+      .filter((e: Expense) => e.category === "additional")
+      .reduce((sum: number, e: Expense) => sum + parseFloat(e.amount), 0);
 
     const totalExpenses = salaryTotal + materialsTotal + fixedTotal + variableTotal;
 
@@ -294,20 +293,20 @@ export default function MonthlyExpenses() {
   };
 
   const toggleSelectAll = () => {
-    const filteredExpenses = expenses.filter(expense => 
+    const filteredExpenses = Array.isArray(expenses) ? expenses.filter((expense: Expense) => 
       expense.year === selectedYear && expense.month === selectedMonth
-    );
+    ) : [];
     
     if (selectedExpenses.length === filteredExpenses.length) {
       setSelectedExpenses([]);
     } else {
-      setSelectedExpenses(filteredExpenses.map(e => e.id));
+      setSelectedExpenses(filteredExpenses.map((e: Expense) => e.id));
     }
   };
 
-  const filteredExpenses = expenses.filter(expense => 
+  const filteredExpenses = Array.isArray(expenses) ? expenses.filter((expense: Expense) => 
     expense.year === selectedYear && expense.month === selectedMonth
-  );
+  ) : [];
 
   if (isLoading) {
     return (
@@ -486,7 +485,7 @@ export default function MonthlyExpenses() {
                     </td>
                   </tr>
                 ) : (
-                  filteredExpenses.map((expense, index) => (
+                  filteredExpenses.map((expense: Expense, index: number) => (
                     <tr key={expense.id} className="border-b border-gray-50 hover:bg-gray-50">
                       <td className="py-4 px-2">
                         <Checkbox
