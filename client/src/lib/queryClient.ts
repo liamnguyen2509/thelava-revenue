@@ -12,6 +12,12 @@ export async function apiRequest(
   method: string,
   data?: unknown | undefined,
 ): Promise<Response> {
+  // Handle logout as a window location change instead of fetch
+  if (url === "/api/auth/logout") {
+    window.location.href = "/api/auth/logout";
+    return new Response();
+  }
+
   const res = await fetch(url, {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
