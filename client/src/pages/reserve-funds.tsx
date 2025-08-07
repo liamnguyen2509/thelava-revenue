@@ -111,7 +111,7 @@ export default function ReserveFunds() {
 
   const deleteExpenditureMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await apiRequest("DELETE", `/api/reserve-expenditures/${id}`);
+      const res = await apiRequest(`/api/reserve-expenditures/${id}`, "DELETE");
       return res.json();
     },
     onSuccess: () => {
@@ -127,7 +127,7 @@ export default function ReserveFunds() {
   const deleteMultipleExpendituresMutation = useMutation({
     mutationFn: async (ids: string[]) => {
       const deletePromises = ids.map(id => 
-        apiRequest("DELETE", `/api/reserve-expenditures/${id}`)
+        apiRequest(`/api/reserve-expenditures/${id}`, "DELETE")
       );
       await Promise.all(deletePromises);
     },

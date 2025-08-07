@@ -70,7 +70,7 @@ export default function ReserveAllocationModal({
 
   const createMutation = useMutation({
     mutationFn: async (data: InsertReserveAllocation) => {
-      const res = await apiRequest("POST", "/api/reserve-allocations", data);
+      const res = await apiRequest("/api/reserve-allocations", "POST", data);
       return res.json();
     },
     onSuccess: () => {

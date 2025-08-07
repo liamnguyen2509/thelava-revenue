@@ -119,7 +119,7 @@ export default function ReserveExpenditureModal({
 
   const createMutation = useMutation({
     mutationFn: async (data: InsertReserveExpenditure) => {
-      const res = await apiRequest("POST", "/api/reserve-expenditures", data);
+      const res = await apiRequest("/api/reserve-expenditures", "POST", data);
       return res.json();
     },
     onSuccess: () => {
@@ -143,7 +143,7 @@ export default function ReserveExpenditureModal({
 
   const updateMutation = useMutation({
     mutationFn: async (data: InsertReserveExpenditure) => {
-      const res = await apiRequest("PUT", `/api/reserve-expenditures/${expenditure?.id}`, data);
+      const res = await apiRequest(`/api/reserve-expenditures/${expenditure?.id}`, "PUT", data);
       return res.json();
     },
     onSuccess: () => {
