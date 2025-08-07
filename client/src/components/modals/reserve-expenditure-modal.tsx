@@ -65,14 +65,32 @@ export default function ReserveExpenditureModal({
     },
   });
 
+  // Helper function to format date from YYYY-MM-DD to DD/MM/YYYY
+  const formatDateForDisplay = (dateString: string) => {
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  // Helper function to format date from DD/MM/YYYY to YYYY-MM-DD
+  const formatDateForInput = (dateString: string) => {
+    if (dateString.includes('/')) {
+      const [day, month, year] = dateString.split('/');
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
+    return dateString;
+  };
+
   // Reset form when expenditure prop changes
   React.useEffect(() => {
     if (expenditure) {
       form.reset({
         name: expenditure.name,
         sourceType: expenditure.sourceType,
-        amount: expenditure.amount.toString(),
-        expenditureDate: expenditure.expenditureDate,
+        amount: Math.round(expenditure.amount).toString(), // Remove decimal places
+        expenditureDate: formatDateForDisplay(expenditure.expenditureDate),
         notes: expenditure.notes || "",
       });
     } else {
@@ -80,7 +98,7 @@ export default function ReserveExpenditureModal({
         name: "",
         sourceType: "",
         amount: "",
-        expenditureDate: new Date().toISOString().split('T')[0],
+        expenditureDate: formatDateForDisplay(new Date().toISOString()),
         notes: "",
       });
     }
@@ -135,10 +153,16 @@ export default function ReserveExpenditureModal({
   });
 
   const onSubmit = (data: InsertReserveExpenditure) => {
+    // Convert date from DD/MM/YYYY to YYYY-MM-DD format before submitting
+    const formattedData = {
+      ...data,
+      expenditureDate: formatDateForInput(data.expenditureDate),
+    };
+    
     if (isEditing) {
-      updateMutation.mutate(data);
+      updateMutation.mutate(formattedData);
     } else {
-      createMutation.mutate(data);
+      createMutation.mutate(formattedData);
     }
   };
 
@@ -223,7 +247,21 @@ export default function ReserveExpenditureModal({
                 <FormItem>
                   <FormLabel>Ngày chi</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <Input 
+                      placeholder="dd/mm/yyyy"
+                      {...field}
+                      onChange={(e) => {
+                        let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+                        if (value.length >= 2) {
+                          value = value.slice(0, 2) + '/' + value.slice(2);
+                        }
+                        if (value.length >= 5) {
+                          value = value.slice(0, 5) + '/' + value.slice(5, 9);
+                        }
+                        field.onChange(value);
+                      }}
+                      maxLength={10}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
