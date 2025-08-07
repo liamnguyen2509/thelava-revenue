@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Chart as ChartJS } from "react-chartjs-2";
+import { Chart as ChartJS, Bar } from "react-chartjs-2";
 import {
   Chart,
   CategoryScale,
@@ -12,9 +12,6 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-
-// Register the Chart as a mixed chart
-const MixedChart = Chart;
 
 Chart.register(
   CategoryScale,
@@ -35,27 +32,24 @@ export default function RevenueChart() {
   // Transform data for chart
   const months = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
   
+  // Process actual revenue data for the chart
+  const monthlyData = Array(12).fill(0);
+  if (revenues && Array.isArray(revenues)) {
+    revenues.forEach((revenue: any) => {
+      if (revenue.month >= 1 && revenue.month <= 12) {
+        monthlyData[revenue.month - 1] += parseFloat(revenue.amount) / 1000000; // Convert to millions
+      }
+    });
+  }
+
   const chartData = {
     labels: months,
     datasets: [
       {
-        label: 'Doanh thu',
-        data: [120, 135, 142, 158, 165, 172, 180, 185, 178, 182, 180, 190], // Mock data - replace with real data
-        backgroundColor: '#E5E7EB',
+        label: 'Doanh thu (triệu VNĐ)',
+        data: monthlyData,
+        backgroundColor: '#8B4513',
         borderRadius: 4,
-        type: 'bar' as const,
-      },
-      {
-        label: 'Lợi nhuận',
-        data: [65, 72, 78, 82, 85, 88, 90, 92, 88, 90, 85, 95], // Mock data - replace with real data
-        type: 'line' as const,
-        borderColor: 'var(--tea-brown)',
-        backgroundColor: 'transparent',
-        tension: 0.4,
-        pointBackgroundColor: 'var(--tea-brown)',
-        pointBorderColor: '#FFFFFF',
-        pointBorderWidth: 2,
-        pointRadius: 6,
       },
     ],
   };
@@ -92,7 +86,7 @@ export default function RevenueChart() {
       </CardHeader>
       <CardContent>
         <div style={{ height: '300px' }}>
-          <MixedChart type="bar" data={chartData} options={options} />
+          <Bar data={chartData} options={options} />
         </div>
       </CardContent>
     </Card>

@@ -76,9 +76,9 @@ export default function Sidebar() {
   const renderMenuItem = (item: any, isSection = false) => (
     <li key={item.href}>
       <Link href={item.href}>
-        <a
+        <div
           className={cn(
-            "flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors",
+            "flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors cursor-pointer",
             isActiveLink(item.href)
               ? "bg-tea-brown text-white"
               : "text-gray-700 hover:bg-gray-100"
@@ -86,7 +86,7 @@ export default function Sidebar() {
         >
           <item.icon className="w-5 h-5" />
           <span>{item.title}</span>
-        </a>
+        </div>
       </Link>
     </li>
   );
