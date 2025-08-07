@@ -1,0 +1,115 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(50, 20%, 97%);
+  --foreground: hsl(30, 50%, 15%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(30, 50%, 15%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(30, 50%, 15%);
+  --primary: hsl(25, 65%, 35%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(30, 25%, 85%);
+  --secondary-foreground: hsl(25, 65%, 35%);
+  --muted: hsl(45, 15%, 92%);
+  --muted-foreground: hsl(30, 25%, 45%);
+  --accent: hsl(35, 45%, 88%);
+  --accent-foreground: hsl(25, 65%, 35%);
+  --destructive: hsl(0, 65%, 55%);
+  --destructive-foreground: hsl(0, 0%, 100%);
+  --border: hsl(45, 15%, 88%);
+  --input: hsl(45, 25%, 95%);
+  --ring: hsl(25, 65%, 35%);
+  --chart-1: hsl(25, 65%, 35%);
+  --chart-2: hsl(35, 55%, 45%);
+  --chart-3: hsl(15, 70%, 60%);
+  --chart-4: hsl(45, 80%, 70%);
+  --chart-5: hsl(35, 60%, 65%);
+  --sidebar: hsl(0, 0%, 100%);
+  --sidebar-foreground: hsl(30, 50%, 15%);
+  --sidebar-primary: hsl(25, 65%, 35%);
+  --sidebar-primary-foreground: hsl(0, 0%, 100%);
+  --sidebar-accent: hsl(45, 15%, 95%);
+  --sidebar-accent-foreground: hsl(25, 65%, 35%);
+  --sidebar-border: hsl(45, 15%, 88%);
+  --sidebar-ring: hsl(25, 65%, 35%);
+  --tea-brown: hsl(25, 65%, 35%);
+  --tea-light: hsl(35, 55%, 45%);
+  --tea-cream: hsl(35, 45%, 88%);
+  --font-sans: 'Inter', ui-sans-serif, system-ui;
+  --font-serif: Georgia, serif;
+  --font-mono: Menlo, monospace;
+  --radius: 0.75rem;
+}
+
+.dark {
+  --background: hsl(30, 15%, 8%);
+  --foreground: hsl(45, 15%, 92%);
+  --card: hsl(30, 20%, 12%);
+  --card-foreground: hsl(45, 15%, 92%);
+  --popover: hsl(30, 20%, 12%);
+  --popover-foreground: hsl(45, 15%, 92%);
+  --primary: hsl(25, 65%, 45%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(30, 15%, 20%);
+  --secondary-foreground: hsl(45, 15%, 85%);
+  --muted: hsl(30, 15%, 18%);
+  --muted-foreground: hsl(30, 15%, 55%);
+  --accent: hsl(30, 20%, 25%);
+  --accent-foreground: hsl(45, 15%, 85%);
+  --destructive: hsl(0, 65%, 55%);
+  --destructive-foreground: hsl(0, 0%, 100%);
+  --border: hsl(30, 15%, 20%);
+  --input: hsl(30, 15%, 18%);
+  --ring: hsl(25, 65%, 45%);
+  --chart-1: hsl(25, 65%, 45%);
+  --chart-2: hsl(35, 55%, 55%);
+  --chart-3: hsl(15, 70%, 65%);
+  --chart-4: hsl(45, 80%, 75%);
+  --chart-5: hsl(35, 60%, 70%);
+  --sidebar: hsl(30, 20%, 12%);
+  --sidebar-foreground: hsl(45, 15%, 85%);
+  --sidebar-primary: hsl(25, 65%, 45%);
+  --sidebar-primary-foreground: hsl(0, 0%, 100%);
+  --sidebar-accent: hsl(30, 15%, 20%);
+  --sidebar-accent-foreground: hsl(45, 15%, 85%);
+  --sidebar-border: hsl(30, 15%, 20%);
+  --sidebar-ring: hsl(25, 65%, 45%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+
+  .tea-brown {
+    color: var(--tea-brown);
+  }
+  
+  .bg-tea-brown {
+    background-color: var(--tea-brown);
+  }
+  
+  .tea-light {
+    color: var(--tea-light);
+  }
+  
+  .bg-tea-light {
+    background-color: var(--tea-light);
+  }
+  
+  .tea-cream {
+    color: var(--tea-cream);
+  }
+  
+  .bg-tea-cream {
+    background-color: var(--tea-cream);
+  }
+}
