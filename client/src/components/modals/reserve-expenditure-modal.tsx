@@ -101,7 +101,7 @@ export default function ReserveExpenditureModal({
     if (expenditure) {
       form.reset({
         name: expenditure.name,
-        sourceType: expenditure.sourceType,
+        accountId: expenditure.accountId,
         amount: formatAmount(expenditure.amount), // Format with dots
         expenditureDate: formatDateForDisplay(expenditure.expenditureDate),
         notes: expenditure.notes || "",
@@ -109,7 +109,7 @@ export default function ReserveExpenditureModal({
     } else {
       form.reset({
         name: "",
-        sourceType: "",
+        accountId: "",
         amount: "",
         expenditureDate: formatDateForDisplay(new Date().toISOString()),
         notes: "",
@@ -212,7 +212,7 @@ export default function ReserveExpenditureModal({
 
             <FormField
               control={form.control}
-              name="sourceType"
+              name="accountId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Nguồn chi</FormLabel>
@@ -224,7 +224,7 @@ export default function ReserveExpenditureModal({
                     </FormControl>
                     <SelectContent>
                       {allocationAccounts.map((account) => (
-                        <SelectItem key={account.id} value={account.name}>
+                        <SelectItem key={account.id} value={account.id}>
                           {account.name}
                         </SelectItem>
                       ))}

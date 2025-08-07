@@ -142,10 +142,21 @@ export default function ReserveFunds() {
     },
   });
 
-  const formatCurrency = (amount: string | number) => {
+  // Get currency from settings
+  const getCurrency = () => {
     const currencySetting = systemSettings.find(s => s.key === "currency");
-    const currency = currencySetting?.value || "VNĐ";
+    return currencySetting?.value || "VNĐ";
+  };
+
+  const formatCurrency = (amount: string | number) => {
+    const currency = getCurrency();
     return Math.round(parseFloat(amount.toString())).toLocaleString('vi-VN').replace(/,/g, '.') + " " + currency;
+  };
+
+  // Function to get account name by id
+  const getAccountName = (accountId: string) => {
+    const account = allocationAccounts.find(acc => acc.id === accountId);
+    return account ? account.name : accountId;
   };
 
   const formatMonth = (month: number) => {
@@ -241,84 +252,84 @@ export default function ReserveFunds() {
         </div>
       </div>
 
-      {/* 5 Summary Cards */}
+      {/* 5 Summary Cards with colors like monthly expenses page */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         {/* Tái đầu tư */}
-        <Card>
+        <Card className="border-green-200 bg-gradient-to-br from-green-50 to-green-100">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tái đầu tư</CardTitle>
+            <CardTitle className="text-sm font-medium text-green-800">Tái đầu tư</CardTitle>
             <TrendingUp className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-xl font-bold text-green-700">
-              {summary?.byAccount?.reinvestment ? formatCurrency(summary.byAccount.reinvestment) : "0"} VNĐ
+            <div className="text-xl font-bold text-green-900">
+              {expenditureSummary?.byAccount?.reinvestment ? formatCurrency(expenditureSummary.byAccount.reinvestment) : "0"}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Tổng phân bổ tất cả năm
+            <p className="text-xs text-green-600">
+              Đã chi năm {selectedYear}
             </p>
           </CardContent>
         </Card>
 
         {/* Khấu hao */}
-        <Card>
+        <Card className="border-yellow-200 bg-gradient-to-br from-yellow-50 to-yellow-100">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Khấu hao</CardTitle>
+            <CardTitle className="text-sm font-medium text-yellow-800">Khấu hao</CardTitle>
             <DollarSign className="h-4 w-4 text-yellow-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-xl font-bold text-yellow-700">
-              {summary?.byAccount?.depreciation ? formatCurrency(summary.byAccount.depreciation) : "0"} VNĐ
+            <div className="text-xl font-bold text-yellow-900">
+              {expenditureSummary?.byAccount?.depreciation ? formatCurrency(expenditureSummary.byAccount.depreciation) : "0"}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Tổng phân bổ tất cả năm
+            <p className="text-xs text-yellow-600">
+              Đã chi năm {selectedYear}
             </p>
           </CardContent>
         </Card>
 
         {/* Rủi ro */}
-        <Card>
+        <Card className="border-red-200 bg-gradient-to-br from-red-50 to-red-100">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Rủi ro</CardTitle>
+            <CardTitle className="text-sm font-medium text-red-800">Rủi ro</CardTitle>
             <AlertTriangle className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-xl font-bold text-red-700">
-              {summary?.byAccount?.risk_reserve ? formatCurrency(summary.byAccount.risk_reserve) : "0"} VNĐ
+            <div className="text-xl font-bold text-red-900">
+              {expenditureSummary?.byAccount?.risk_reserve ? formatCurrency(expenditureSummary.byAccount.risk_reserve) : "0"}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Tổng phân bổ tất cả năm
+            <p className="text-xs text-red-600">
+              Đã chi năm {selectedYear}
             </p>
           </CardContent>
         </Card>
 
         {/* Lương thưởng */}
-        <Card>
+        <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Lương thưởng</CardTitle>
+            <CardTitle className="text-sm font-medium text-blue-800">Lương thưởng</CardTitle>
             <Users className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-xl font-bold text-blue-700">
-              {summary?.byAccount?.staff_bonus ? formatCurrency(summary.byAccount.staff_bonus) : "0"} VNĐ
+            <div className="text-xl font-bold text-blue-900">
+              {expenditureSummary?.byAccount?.staff_bonus ? formatCurrency(expenditureSummary.byAccount.staff_bonus) : "0"}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Tổng phân bổ tất cả năm
+            <p className="text-xs text-blue-600">
+              Đã chi năm {selectedYear}
             </p>
           </CardContent>
         </Card>
 
-        {/* Số dư thực tế */}
-        <Card>
+        {/* Tổng chi */}
+        <Card className="border-tea-brown bg-gradient-to-br from-tea-light to-tea-cream">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Số dư thực tế</CardTitle>
-            <Wallet className="h-4 w-4 text-purple-600" />
+            <CardTitle className="text-sm font-medium text-tea-brown">Tổng chi</CardTitle>
+            <Wallet className="h-4 w-4 text-tea-brown" />
           </CardHeader>
           <CardContent>
-            <div className="text-xl font-bold text-purple-700">
-              {formatCurrency(calculateActualBalance())} VNĐ
+            <div className="text-xl font-bold text-tea-brown">
+              {expenditureSummary?.totalExpended ? formatCurrency(expenditureSummary.totalExpended) : "0"}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Chưa chi: {summary?.total ? formatCurrency(summary.total) : "0"} VNĐ
+            <p className="text-xs text-tea-brown/70">
+              Tổng chi năm {selectedYear}
             </p>
           </CardContent>
         </Card>
@@ -388,7 +399,7 @@ export default function ReserveFunds() {
               <div className="space-y-4">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-red-600">
-                    {expenditureSummary?.totalExpended ? formatCurrency(expenditureSummary.totalExpended) : "0"} VNĐ
+                    {expenditureSummary?.totalExpended ? formatCurrency(expenditureSummary.totalExpended) : "0"}
                   </div>
                   <p className="text-sm text-gray-600">Tổng chi trong năm</p>
                 </div>
@@ -491,11 +502,11 @@ export default function ReserveFunds() {
                     <TableCell>{expenditure.name}</TableCell>
                     <TableCell>
                       <Badge className={accountTypeColors[expenditure.sourceType] || "bg-gray-100 text-gray-800"}>
-                        {accountTypeLabels[expenditure.sourceType] || expenditure.sourceType}
+                        {getAccountName(expenditure.accountId)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right font-medium">
-                      {formatCurrency(expenditure.amount)} VNĐ
+                      {formatCurrency(expenditure.amount)}
                     </TableCell>
                     <TableCell>
                       {new Date(expenditure.expenditureDate).toLocaleDateString('vi-VN')}
