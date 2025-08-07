@@ -1,14 +1,15 @@
 import { 
-  users, revenues, expenses, reserveAllocations, allocationAccounts, 
+  users, revenues, expenses, reserveAllocations, reserveExpenditures, allocationAccounts, 
   shareholders, stockItems, stockTransactions, expenseCategories,
   type User, type InsertUser, type Revenue, type InsertRevenue,
   type Expense, type InsertExpense, type ReserveAllocation, type InsertReserveAllocation,
+  type ReserveExpenditure, type InsertReserveExpenditure,
   type AllocationAccount, type InsertAllocationAccount, type Shareholder, type InsertShareholder,
   type StockItem, type InsertStockItem, type StockTransaction, type InsertStockTransaction,
   type ExpenseCategory, type InsertExpenseCategory
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql, desc } from "drizzle-orm";
 
 // IStorage Interface
 interface IStorage {
@@ -30,6 +31,15 @@ interface IStorage {
   getReserveAllocations(year: number, month?: number): Promise<ReserveAllocation[]>;
   createReserveAllocation(insertReserveAllocation: InsertReserveAllocation): Promise<ReserveAllocation>;
   getReserveAllocationsSummary(): Promise<{ total: number; byAccount: { [key: string]: number } }>;
+  getReserveExpenditures(year?: number, month?: number): Promise<ReserveExpenditure[]>;
+  createReserveExpenditure(insertReserveExpenditure: InsertReserveExpenditure): Promise<ReserveExpenditure>;
+  deleteReserveExpenditure(id: string): Promise<void>;
+  updateReserveExpenditure(id: string, updateData: Partial<InsertReserveExpenditure>): Promise<ReserveExpenditure>;
+  getReserveExpendituresSummary(year: number): Promise<{
+    totalExpended: number;
+    byAccount: { [key: string]: number };
+    monthlyExpenditure: { [month: number]: { [account: string]: number } };
+  }>;
   getShareholders(): Promise<Shareholder[]>;
   createShareholder(insertShareholder: InsertShareholder): Promise<Shareholder>;
   getExpenseCategories(): Promise<ExpenseCategory[]>;
@@ -192,15 +202,85 @@ export class DatabaseStorage implements IStorage {
     const allocations = await this.getReserveAllocations(currentYear);
     
     const total = allocations.reduce((sum: number, allocation: ReserveAllocation) => 
-      sum + parseFloat(allocation.amount), 0);
+      sum + parseFloat(allocation.amount.toString()), 0);
     
     const byAccount: { [key: string]: number } = {};
     allocations.forEach((allocation: ReserveAllocation) => {
       const accountType = allocation.accountType;
-      byAccount[accountType] = (byAccount[accountType] || 0) + parseFloat(allocation.amount);
+      byAccount[accountType] = (byAccount[accountType] || 0) + parseFloat(allocation.amount.toString());
     });
     
     return { total, byAccount };
+  }
+
+  // Reserve expenditure methods
+  async getReserveExpenditures(year?: number, month?: number): Promise<ReserveExpenditure[]> {
+    let query = db.select().from(reserveExpenditures);
+    
+    if (year && month) {
+      query = query.where(
+        and(
+          sql`EXTRACT(YEAR FROM ${reserveExpenditures.expenditureDate}) = ${year}`,
+          sql`EXTRACT(MONTH FROM ${reserveExpenditures.expenditureDate}) = ${month}`
+        )
+      );
+    } else if (year) {
+      query = query.where(sql`EXTRACT(YEAR FROM ${reserveExpenditures.expenditureDate}) = ${year}`);
+    }
+    
+    return await query.orderBy(desc(reserveExpenditures.expenditureDate));
+  }
+
+  async createReserveExpenditure(insertReserveExpenditure: InsertReserveExpenditure): Promise<ReserveExpenditure> {
+    const [expenditure] = await db
+      .insert(reserveExpenditures)
+      .values(insertReserveExpenditure)
+      .returning();
+    return expenditure;
+  }
+
+  async deleteReserveExpenditure(id: string): Promise<void> {
+    await db.delete(reserveExpenditures).where(eq(reserveExpenditures.id, id));
+  }
+
+  async updateReserveExpenditure(id: string, updateData: Partial<InsertReserveExpenditure>): Promise<ReserveExpenditure> {
+    const [expenditure] = await db
+      .update(reserveExpenditures)
+      .set(updateData)
+      .where(eq(reserveExpenditures.id, id))
+      .returning();
+    return expenditure;
+  }
+
+  async getReserveExpendituresSummary(year: number): Promise<{
+    totalExpended: number;
+    byAccount: { [key: string]: number };
+    monthlyExpenditure: { [month: number]: { [account: string]: number } };
+  }> {
+    const expenditures = await this.getReserveExpenditures(year);
+    
+    const totalExpended = expenditures.reduce((sum, exp) => 
+      sum + parseFloat(exp.amount.toString()), 0);
+    
+    const byAccount: { [key: string]: number } = {};
+    const monthlyExpenditure: { [month: number]: { [account: string]: number } } = {};
+    
+    expenditures.forEach((exp) => {
+      const sourceType = exp.sourceType;
+      const month = new Date(exp.expenditureDate).getMonth() + 1;
+      const amount = parseFloat(exp.amount.toString());
+      
+      // By account totals
+      byAccount[sourceType] = (byAccount[sourceType] || 0) + amount;
+      
+      // Monthly breakdown
+      if (!monthlyExpenditure[month]) {
+        monthlyExpenditure[month] = {};
+      }
+      monthlyExpenditure[month][sourceType] = (monthlyExpenditure[month][sourceType] || 0) + amount;
+    });
+    
+    return { totalExpended, byAccount, monthlyExpenditure };
   }
 
   async getDashboardData(): Promise<any> {

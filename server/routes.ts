@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, loginSchema, insertRevenueSchema, insertExpenseSchema, insertStockItemSchema, insertStockTransactionSchema, insertAllocationAccountSchema, insertShareholderSchema, insertExpenseCategorySchema, insertReserveAllocationSchema } from "@shared/schema";
+import { insertUserSchema, loginSchema, insertRevenueSchema, insertExpenseSchema, insertStockItemSchema, insertStockTransactionSchema, insertAllocationAccountSchema, insertShareholderSchema, insertExpenseCategorySchema, insertReserveAllocationSchema, insertReserveExpenditureSchema } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import session from "express-session";
 import { Pool } from "@neondatabase/serverless";
@@ -211,6 +211,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(summary);
     } catch (error) {
       res.status(500).json({ message: "Lỗi khi lấy tổng quan phân bổ quỹ dự trữ" });
+    }
+  });
+
+  // Reserve expenditure routes
+  app.get("/api/reserve-expenditures", requireAuth, async (req, res) => {
+    try {
+      const year = req.query.year ? parseInt(req.query.year as string) : undefined;
+      const month = req.query.month ? parseInt(req.query.month as string) : undefined;
+      const expenditures = await storage.getReserveExpenditures(year, month);
+      res.json(expenditures);
+    } catch (error) {
+      res.status(500).json({ message: "Lỗi khi lấy dữ liệu chi tiêu quỹ dự trữ" });
+    }
+  });
+
+  app.post("/api/reserve-expenditures", requireAuth, async (req, res) => {
+    try {
+      const expenditureData = insertReserveExpenditureSchema.parse(req.body);
+      const expenditure = await storage.createReserveExpenditure(expenditureData);
+      res.json(expenditure);
+    } catch (error) {
+      res.status(400).json({ message: "Dữ liệu chi tiêu quỹ dự trữ không hợp lệ" });
+    }
+  });
+
+  app.put("/api/reserve-expenditures/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updateData = insertReserveExpenditureSchema.partial().parse(req.body);
+      const expenditure = await storage.updateReserveExpenditure(id, updateData);
+      res.json(expenditure);
+    } catch (error) {
+      res.status(400).json({ message: "Không thể cập nhật chi tiêu quỹ dự trữ" });
+    }
+  });
+
+  app.delete("/api/reserve-expenditures/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteReserveExpenditure(id);
+      res.json({ message: "Đã xóa chi tiêu quỹ dự trữ" });
+    } catch (error) {
+      res.status(500).json({ message: "Không thể xóa chi tiêu quỹ dự trữ" });
+    }
+  });
+
+  app.get("/api/reserve-expenditures/summary/:year", requireAuth, async (req, res) => {
+    try {
+      const year = parseInt(req.params.year);
+      const summary = await storage.getReserveExpendituresSummary(year);
+      res.json(summary);
+    } catch (error) {
+      res.status(500).json({ message: "Lỗi khi lấy tổng quan chi tiêu quỹ dự trữ" });
     }
   });
 

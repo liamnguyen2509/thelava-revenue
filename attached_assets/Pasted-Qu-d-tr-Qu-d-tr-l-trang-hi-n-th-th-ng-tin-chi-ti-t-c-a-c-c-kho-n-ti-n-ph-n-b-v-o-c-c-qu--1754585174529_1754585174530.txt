@@ -1,0 +1,39 @@
+Quỹ dự trữ
+•	Quỹ dự trữ là trang hiển thị thông tin chi tiết của các khoản tiền phân bổ vào các quỹ dự trù cho tiệm từ doanh thu
+•	Trên cùng là 5 khối tổng kết: 
+o	Tái đầu tư: Tổng số tiền đã được phân bổ vào quỹ tái đầu tư (cộng tổng tất cả các năm)
+o	Khấu hao: Tổng số tiền đã được phân bổ vào quỹ Khấu hao (cộng tổng tất cả các năm)
+o	Rủi ro: Tổng số tiền đã được phân bổ vào quỹ Rủi ro (cộng tổng tất cả các năm)
+o	Lương thưởng: Tổng số tiền đã được phân bổ vào quỹ lương thưởng (cộng tất cả các n
+o	Số dư thực tế: Tổng số tiền quỹ dự trù còn lại dựa trên Tổng số tiền quỹ ban đầu trừ cho các khoản đã chi. Hiển thị 2 con số. 1 số lớn là số dư thực tế. Số nhỏ là tổng số tiền quỹ dự trữ chưa chi.
+•	Bên dưới 5 khối này là 2 panel. Panel bên trái chiếm 2/3 độ rộng. Panel bên phải chiếm 1/3
+o	Panel trái:
+o	Tiêu đề: Tổng chi theo tháng 
+o	Nội dung: là 1 bảng với 6 cột và 12 dòng. 
+o	6 cột bao gồm:
+	Tháng: 12 tháng trong năm
+	Tái đầu tư: Số tiền đã chi trích từ quỹ tái đầu tư
+	Khấu hao: Số tiền đã chi trích từ quỹ tái đầu tư
+	Rủi ro: Số tiền đã chi trích từ quỹ rủi ro
+	Lương thưởng: Số tiền đã chi trích từ quỹ lương thưởng
+	Tổng: Tổng số tiền đã trích từ quỹ theo từng tháng
+o	Panel phải:
+o	Tiêu đề: Tổng chi quỹ
+o	Hiển thị tổng số tiền đã chi trích từ quỹ trong năm và tổng số tiền đã chi trích từ từng quỹ. 
+•	Dưới 2 panel này là 1 bảng. Bảng này tên là LỊCH SỬ TRÍCH QUỸ
+o	Bảng gồm 7 cột và 10 dòng mỗi trang. Bảng có phân trang
+o	7 cột:
+	STT: Số thứ tự
+	Mục chi: Tên khoản đã chi
+	Nguồn chi: Nguồn chi chính là tên của quỹ dự trữ mà khoản chi này được trích
+	Tiền chi: Số tiền đã chi
+	Ngày chi
+	Ghi chú
+	Cột không tên: chứ các icon Edit, delete
+o	Bảng cho phép check nhiều dòng và thực hiện tạp tác xóa hang loạt
+o	Bên trên bảng có 1 nút tên: Thêm khoản chi. Khi nhấn vào hiển thị một form popup với các trường:
+	Khoản chi: free text
+	Nguồn chi: dropdown danh sách các quỹ: Tái đầu tư, khấu hao, rủi ro, lương thưởng. Danh sách này được load từ bảng danh sách các tài khoản phân bổ. 
+	Tiền chi
+	Ngày chi. Mặc định là ngày hiện tại. Người dung có thể chọn ngày bất kì
+	Ghi chú

@@ -44,6 +44,16 @@ export const reserveAllocations = pgTable("reserve_allocations", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const reserveExpenditures = pgTable("reserve_expenditures", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(), // Tên khoản chi
+  sourceType: text("source_type").notNull(), // reinvestment, depreciation, risk_reserve, staff_bonus
+  amount: decimal("amount", { precision: 15, scale: 2 }).notNull(), // Số tiền chi
+  expenditureDate: date("expenditure_date").notNull(), // Ngày chi
+  notes: text("notes"), // Ghi chú
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const allocationAccounts = pgTable("allocation_accounts", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
@@ -123,6 +133,11 @@ export const insertReserveAllocationSchema = createInsertSchema(reserveAllocatio
   createdAt: true,
 });
 
+export const insertReserveExpenditureSchema = createInsertSchema(reserveExpenditures).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertAllocationAccountSchema = createInsertSchema(allocationAccounts).omit({
   id: true,
 });
@@ -157,6 +172,9 @@ export type InsertExpense = z.infer<typeof insertExpenseSchema>;
 
 export type ReserveAllocation = typeof reserveAllocations.$inferSelect;
 export type InsertReserveAllocation = z.infer<typeof insertReserveAllocationSchema>;
+
+export type ReserveExpenditure = typeof reserveExpenditures.$inferSelect;
+export type InsertReserveExpenditure = z.infer<typeof insertReserveExpenditureSchema>;
 
 export type AllocationAccount = typeof allocationAccounts.$inferSelect;
 export type InsertAllocationAccount = z.infer<typeof insertAllocationAccountSchema>;
