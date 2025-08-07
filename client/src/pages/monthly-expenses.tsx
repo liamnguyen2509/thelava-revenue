@@ -43,7 +43,7 @@ export default function MonthlyExpenses() {
   const yearFromUrl = urlParams.get('year');
   
   const [selectedYear, setSelectedYear] = useState(yearFromUrl ? parseInt(yearFromUrl) : currentDate.getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState(monthFromUrl ? parseInt(monthFromUrl) : 1);
+  const [selectedMonth, setSelectedMonth] = useState(monthFromUrl ? parseInt(monthFromUrl) : currentDate.getMonth() + 1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [selectedExpenses, setSelectedExpenses] = useState<string[]>([]);
@@ -74,12 +74,12 @@ export default function MonthlyExpenses() {
 
   const years = Array.from({ length: 5 }, (_, i) => currentDate.getFullYear() - i);
   const months = [
-    { value: 1, label: "Tháng 1" }, { value: 2, label: "Tháng 2" },
-    { value: 3, label: "Tháng 3" }, { value: 4, label: "Tháng 4" },
-    { value: 5, label: "Tháng 5" }, { value: 6, label: "Tháng 6" },
-    { value: 7, label: "Tháng 7" }, { value: 8, label: "Tháng 8" },
-    { value: 9, label: "Tháng 9" }, { value: 10, label: "Tháng 10" },
-    { value: 11, label: "Tháng 11" }, { value: 12, label: "Tháng 12" }
+    { value: 1, label: "1" }, { value: 2, label: "2" },
+    { value: 3, label: "3" }, { value: 4, label: "4" },
+    { value: 5, label: "5" }, { value: 6, label: "6" },
+    { value: 7, label: "7" }, { value: 8, label: "8" },
+    { value: 9, label: "9" }, { value: 10, label: "10" },
+    { value: 11, label: "11" }, { value: 12, label: "12" }
   ];
 
   const getCurrency = () => {
@@ -495,7 +495,13 @@ export default function MonthlyExpenses() {
                       </td>
                       <td className="py-4 text-sm text-gray-900">{index + 1}</td>
                       <td className="py-4 text-sm font-medium text-gray-900">{expense.name}</td>
-                      <td className="py-4 text-sm text-gray-600">{expense.category}</td>
+                      <td className="py-4 text-sm text-gray-600">
+                        {expense.category === 'staff_salary' ? 'Lương nhân viên' : 
+                         expense.category === 'ingredients' ? 'Nguyên liệu' :
+                         expense.category === 'fixed' ? 'Chi phí cố định' :
+                         expense.category === 'additional' ? 'Chi phí phát sinh' : 
+                         expense.category}
+                      </td>
                       <td className="py-4 text-sm text-gray-900 text-right font-medium">
                         {formatCurrency(parseFloat(expense.amount))}
                       </td>
