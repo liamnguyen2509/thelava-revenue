@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { ObjectStorageService } from "./objectStorage";
 import { 
   insertUserSchema, loginSchema, insertRevenueSchema, insertExpenseSchema, insertStockItemSchema, 
   insertStockTransactionSchema, insertAllocationAccountSchema, insertShareholderSchema, 
@@ -493,6 +494,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Xóa chi nhánh thành công" });
     } catch (error) {
       res.status(500).json({ message: "Lỗi khi xóa chi nhánh" });
+    }
+  });
+
+  // Logo upload APIs
+  app.post("/api/logo/upload-url", requireAuth, async (req, res) => {
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getLogoUploadURL();
+      res.json({ uploadURL });
+    } catch (error) {
+      console.error("Error getting logo upload URL:", error);
+      res.status(500).json({ message: "Lỗi khi tạo URL upload" });
+    }
+  });
+
+  app.post("/api/logo/update", requireAuth, async (req, res) => {
+    try {
+      const { logoUrl } = req.body;
+      const objectStorageService = new ObjectStorageService();
+      const logoPath = objectStorageService.normalizeLogoPath(logoUrl);
+      
+      // Update logo in system settings
+      await storage.upsertSystemSetting("logo", logoPath);
+      
+      res.json({ logoPath });
+    } catch (error) {
+      console.error("Error updating logo:", error);
+      res.status(500).json({ message: "Lỗi khi cập nhật logo" });
+    }
+  });
+
+  // Public logo serving
+  app.get("/public-objects/:filePath(*)", async (req, res) => {
+    const filePath = req.params.filePath;
+    const objectStorageService = new ObjectStorageService();
+    try {
+      const file = await objectStorageService.searchPublicObject(filePath);
+      if (!file) {
+        return res.status(404).json({ error: "File not found" });
+      }
+      objectStorageService.downloadObject(file, res);
+    } catch (error) {
+      console.error("Error searching for public object:", error);
+      return res.status(500).json({ error: "Internal server error" });
     }
   });
 

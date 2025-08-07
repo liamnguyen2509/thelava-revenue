@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Settings, Upload, Edit, Trash2, Plus, Save, Building, Users, DollarSign, Tags, PieChart } from "lucide-react";
 import type { SystemSetting, Shareholder, AllocationAccount, ExpenseCategory, Branch } from "@shared/schema";
+import { LogoUploader } from "@/components/LogoUploader";
 
 interface SettingsForm {
   logo: string;
@@ -397,18 +398,13 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="logo">Logo URL</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="logo"
-                    value={settingsForm.logo}
-                    onChange={(e) => setSettingsForm(prev => ({ ...prev, logo: e.target.value }))}
-                    placeholder="https://example.com/logo.png"
-                  />
-                  <Button variant="outline" size="icon">
-                    <Upload className="h-4 w-4" />
-                  </Button>
-                </div>
+                <Label>Logo hệ thống</Label>
+                <LogoUploader 
+                  currentLogo={settingsForm.logo}
+                  onLogoUpdate={(logoPath) => {
+                    setSettingsForm(prev => ({ ...prev, logo: logoPath }));
+                  }}
+                />
                 <p className="text-sm text-muted-foreground">
                   Logo sẽ được hiển thị ở trang đăng nhập và thanh điều hướng
                 </p>
