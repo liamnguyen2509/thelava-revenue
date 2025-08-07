@@ -1,3 +1,4 @@
+import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -56,13 +57,34 @@ export default function ReserveExpenditureModal({
   const form = useForm<InsertReserveExpenditure>({
     resolver: zodResolver(insertReserveExpenditureSchema),
     defaultValues: {
-      name: expenditure?.name || "",
-      sourceType: expenditure?.sourceType || "",
-      amount: expenditure?.amount?.toString() || "",
-      expenditureDate: expenditure?.expenditureDate || new Date().toISOString().split('T')[0],
-      notes: expenditure?.notes || "",
+      name: "",
+      sourceType: "",
+      amount: "",
+      expenditureDate: new Date().toISOString().split('T')[0],
+      notes: "",
     },
   });
+
+  // Reset form when expenditure prop changes
+  React.useEffect(() => {
+    if (expenditure) {
+      form.reset({
+        name: expenditure.name,
+        sourceType: expenditure.sourceType,
+        amount: expenditure.amount.toString(),
+        expenditureDate: expenditure.expenditureDate,
+        notes: expenditure.notes || "",
+      });
+    } else {
+      form.reset({
+        name: "",
+        sourceType: "",
+        amount: "",
+        expenditureDate: new Date().toISOString().split('T')[0],
+        notes: "",
+      });
+    }
+  }, [expenditure, form]);
 
   const createMutation = useMutation({
     mutationFn: async (data: InsertReserveExpenditure) => {
