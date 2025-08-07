@@ -704,6 +704,14 @@ export default function SettingsPage() {
                 editType === "branch" ? "chi nhánh" : ""
               }
             </DialogTitle>
+            <DialogDescription>
+              {editingItem ? "Cập nhật thông tin" : "Thêm thông tin mới cho"} {
+                editType === "shareholder" ? "cổ đông" :
+                editType === "allocation" ? "tài khoản phân bổ quỹ" :
+                editType === "category" ? "danh mục chi phí" :
+                editType === "branch" ? "chi nhánh" : ""
+              }.
+            </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4">
