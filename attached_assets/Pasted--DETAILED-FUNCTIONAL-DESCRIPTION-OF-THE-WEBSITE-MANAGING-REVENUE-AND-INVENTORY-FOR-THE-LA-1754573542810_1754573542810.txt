@@ -1,0 +1,144 @@
+**DETAILED FUNCTIONAL DESCRIPTION OF THE WEBSITE**
+**MANAGING REVENUE AND INVENTORY FOR**
+**THE LAVA TEA SHOP**
+
+---
+
+**OBJECTIVE**
+
+* This website was created to support the shop owner in managing monthly cash flow and expenditures, track monthly and yearly revenues, and manage inventory data such as item lists, inbound, outbound, and remaining stock. It also helps the owner allocate net profits into various reserve categories and provides an overview of the shop's financial flow.
+* The application works well on web browsers and offers a responsive design for mobile access, giving a user experience close to using a mobile application.
+
+---
+
+**DETAILS**
+
+### HOMEPAGE (DASHBOARD) LAYOUT STRUCTURE
+
+The homepage layout (Dashboard) consists of:
+
+* **Top Navigation Bar**: Logo on the left, logged-in account name on the right.
+* **Main Container** below the Top Navigation Bar, divided into two columns:
+
+  * **Left Sidebar Menu**:
+
+    * Dashboard
+    * Revenue Management
+
+      * Cash Flow Management
+      * Reserve Fund Management
+      * Monthly Expenses
+    * Inventory Management
+
+      * Stock Overview
+      * Stock In
+      * Stock Out
+    * Settings
+
+      * General Settings
+
+        * Currency Units
+        * Allocation Accounts
+        * Expense Categories
+        * Shareholders and Ratios
+        * Branches
+  * **Right Column**: Displays the main content of the website. By default, this is the Dashboard page after the admin logs in.
+
+---
+
+### DASHBOARD PAGE
+
+The Dashboard is the default homepage shown when an admin logs in. It presents summarized information and visual reports.
+
+**Components:**
+
+* At the top, four summary boxes:
+
+  * **Annual Revenue**: Total revenue of the current year
+  * **Monthly Revenue**: Total revenue of the current month
+  * **Expenses Spent**: Total expenses for the current month
+  * **Estimated Profit**: Current profit calculated as Monthly Revenue minus all recorded monthly expenses
+* Below the summary boxes:
+
+  * **Table: Reserve Account Allocations** with columns:
+
+    * Account: Names configured in Settings > Allocation Accounts (e.g., Reinvestment, Depreciation, Risk Reserve, Staff Bonus, Dividends, Marketing)
+    * Description: Pulled from configuration
+    * %: Percentage of net profit allocated
+    * Total: Sum of allocated amounts across the year
+
+  * **Chart: Cash Flow Fluctuations**
+
+    * Chart Type: Horizontal bar chart
+    * X-Axis: Amounts
+    * Y-Axis: Months
+    * Data Series: Revenue, Net Profit, Staff Salary, Ingredients, Fixed Expenses, Additional Expenses
+
+  * **Chart: Monthly Revenue Ratio**
+
+    * Chart Type: Vertical bars with line
+    * X-Axis: Months
+    * Y-Axis: Amounts
+    * Columns: Monthly revenue
+    * Line: Monthly net profit
+
+---
+
+### REVENUE MANAGEMENT > CASH FLOW MANAGEMENT
+
+This page allows users to view and modify cash flow data according to their needs.
+
+* Users can filter data by year.
+* Two tables displayed:
+
+  * **Revenue by Year Table**:
+
+    * 13 columns, 12 rows (each row = a month)
+    * Clicking a row navigates to Monthly Expense Management
+    * Top right: "Add Expense" button → Opens popup with:
+
+      * Expense Name (text)
+      * Expense Type (dropdown from configured categories: Staff Salary, Ingredients, Fixed Expenses, Additional Expenses)
+      * Amount
+      * Expense Date (defaults to today, editable)
+      * Status (Spent, Draft)
+      * Notes
+
+    **Columns:**
+
+    * Month
+    * Revenue (entered manually or via KiotViet API)
+    * Staff Salary
+    * Ingredients Cost
+    * Fixed Expenses
+    * Additional Expenses
+    * Net Profit (Revenue - Total Expenses)
+    * Net Profit % (vs Revenue)
+    * Salary % (vs Revenue)
+    * Ingredients % (vs Revenue)
+    * Fixed Expense % (vs Revenue)
+    * Additional Expense % (vs Revenue)
+    * Avg Daily Revenue (Revenue / Days in Month)
+
+  * **Net Profit Allocation Table**:
+
+    * 7 columns, 12 rows (each row = a month)
+    * Columns:
+
+      * Month
+      * Reinvestment (auto-calculated & admin-adjusted values)
+      * Depreciation (auto-calculated & admin-adjusted values)
+      * Risk Reserve (auto-calculated & admin-adjusted values)
+      * Staff Bonus (auto-calculated & admin-adjusted values)
+      * Dividends: List of shareholders with ratio and amount
+      * Marketing (auto-calculated & admin-adjusted values)
+
+---
+
+### UI/UX REQUIREMENTS
+
+* Interface should have a harmonious color scheme, be clean, easy to use
+* Font: Entirely in Vietnamese
+* Fully responsive design for mobile
+* Technologies used: ReactJS (frontend), NodeJS (backend), MSSQL (database)
+* Login page with phone number and password form, and shop logo
