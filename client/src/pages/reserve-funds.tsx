@@ -502,7 +502,7 @@ export default function ReserveFunds() {
                     <TableCell>{expenditure.name}</TableCell>
                     <TableCell>
                       <Badge className={accountTypeColors[expenditure.sourceType] || "bg-gray-100 text-gray-800"}>
-                        {getAccountName(expenditure.accountId)}
+                        {accountTypeLabels[expenditure.sourceType] || expenditure.sourceType}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right font-medium">

@@ -101,15 +101,15 @@ export default function ReserveExpenditureModal({
     if (expenditure) {
       form.reset({
         name: expenditure.name,
-        accountId: expenditure.accountId,
+        sourceType: expenditure.sourceType,
         amount: formatAmount(expenditure.amount), // Format with dots
         expenditureDate: formatDateForDisplay(expenditure.expenditureDate),
-        notes: expenditure.notes || "",
+        notes: expenditure.notes ?? "",
       });
     } else {
       form.reset({
         name: "",
-        accountId: "",
+        sourceType: "",
         amount: "",
         expenditureDate: formatDateForDisplay(new Date().toISOString()),
         notes: "",
@@ -212,7 +212,7 @@ export default function ReserveExpenditureModal({
 
             <FormField
               control={form.control}
-              name="accountId"
+              name="sourceType"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Nguồn chi</FormLabel>
@@ -223,11 +223,10 @@ export default function ReserveExpenditureModal({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {allocationAccounts.map((account) => (
-                        <SelectItem key={account.id} value={account.id}>
-                          {account.name}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="reinvestment">Tái đầu tư</SelectItem>
+                      <SelectItem value="depreciation">Khấu hao</SelectItem>
+                      <SelectItem value="risk_reserve">Rủi ro</SelectItem>
+                      <SelectItem value="staff_bonus">Lương thưởng</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -305,6 +304,7 @@ export default function ReserveExpenditureModal({
                       placeholder="Nhập ghi chú (tùy chọn)"
                       className="resize-none"
                       {...field}
+                      value={field.value || ""}
                     />
                   </FormControl>
                   <FormMessage />
