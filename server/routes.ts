@@ -1,7 +1,12 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, loginSchema, insertRevenueSchema, insertExpenseSchema, insertStockItemSchema, insertStockTransactionSchema, insertAllocationAccountSchema, insertShareholderSchema, insertExpenseCategorySchema, insertReserveAllocationSchema, insertReserveExpenditureSchema } from "@shared/schema";
+import { 
+  insertUserSchema, loginSchema, insertRevenueSchema, insertExpenseSchema, insertStockItemSchema, 
+  insertStockTransactionSchema, insertAllocationAccountSchema, insertShareholderSchema, 
+  insertExpenseCategorySchema, insertReserveAllocationSchema, insertReserveExpenditureSchema,
+  insertBranchSchema, insertSystemSettingSchema
+} from "@shared/schema";
 import bcrypt from "bcryptjs";
 import session from "express-session";
 import { Pool } from "@neondatabase/serverless";
@@ -332,6 +337,153 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(dashboard);
     } catch (error) {
       res.status(500).json({ message: "Lỗi khi lấy dữ liệu dashboard" });
+    }
+  });
+
+  // System Settings APIs
+  app.get("/api/settings/system", requireAuth, async (req, res) => {
+    try {
+      const settings = await storage.getSystemSettings();
+      res.json(settings);
+    } catch (error) {
+      res.status(500).json({ message: "Lỗi khi lấy cài đặt hệ thống" });
+    }
+  });
+
+  app.put("/api/settings/system/:key", requireAuth, async (req, res) => {
+    try {
+      const { key } = req.params;
+      const { value } = req.body;
+      const setting = await storage.upsertSystemSetting(key, value);
+      res.json(setting);
+    } catch (error) {
+      res.status(400).json({ message: "Lỗi khi cập nhật cài đặt" });
+    }
+  });
+
+  // Shareholders APIs
+  app.get("/api/settings/shareholders", requireAuth, async (req, res) => {
+    try {
+      const shareholders = await storage.getShareholders();
+      res.json(shareholders);
+    } catch (error) {
+      res.status(500).json({ message: "Lỗi khi lấy danh sách cổ đông" });
+    }
+  });
+
+  app.post("/api/settings/shareholders", requireAuth, async (req, res) => {
+    try {
+      const shareholderData = insertShareholderSchema.parse(req.body);
+      const shareholder = await storage.createShareholder(shareholderData);
+      res.json(shareholder);
+    } catch (error) {
+      res.status(400).json({ message: "Dữ liệu cổ đông không hợp lệ" });
+    }
+  });
+
+  app.put("/api/settings/shareholders/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updateData = insertShareholderSchema.partial().parse(req.body);
+      const shareholder = await storage.updateShareholder(id, updateData);
+      res.json(shareholder);
+    } catch (error) {
+      res.status(400).json({ message: "Lỗi khi cập nhật cổ đông" });
+    }
+  });
+
+  app.delete("/api/settings/shareholders/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteShareholder(id);
+      res.json({ message: "Xóa cổ đông thành công" });
+    } catch (error) {
+      res.status(500).json({ message: "Lỗi khi xóa cổ đông" });
+    }
+  });
+
+  // Allocation Accounts APIs
+  app.put("/api/settings/allocation-accounts/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updateData = insertAllocationAccountSchema.partial().parse(req.body);
+      const account = await storage.updateAllocationAccount(id, updateData);
+      res.json(account);
+    } catch (error) {
+      res.status(400).json({ message: "Lỗi khi cập nhật tài khoản phân bổ" });
+    }
+  });
+
+  app.delete("/api/settings/allocation-accounts/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteAllocationAccount(id);
+      res.json({ message: "Xóa tài khoản phân bổ thành công" });
+    } catch (error) {
+      res.status(500).json({ message: "Lỗi khi xóa tài khoản phân bổ" });
+    }
+  });
+
+  // Expense Categories APIs with update and delete
+  app.put("/api/settings/expense-categories/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updateData = insertExpenseCategorySchema.partial().parse(req.body);
+      const category = await storage.updateExpenseCategory(id, updateData);
+      res.json(category);
+    } catch (error) {
+      res.status(400).json({ message: "Lỗi khi cập nhật danh mục chi phí" });
+    }
+  });
+
+  app.delete("/api/settings/expense-categories/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteExpenseCategory(id);
+      res.json({ message: "Xóa danh mục chi phí thành công" });
+    } catch (error) {
+      res.status(500).json({ message: "Lỗi khi xóa danh mục chi phí" });
+    }
+  });
+
+  // Branches APIs
+  app.get("/api/settings/branches", requireAuth, async (req, res) => {
+    try {
+      const branches = await storage.getBranches();
+      res.json(branches);
+    } catch (error) {
+      res.status(500).json({ message: "Lỗi khi lấy danh sách chi nhánh" });
+    }
+  });
+
+  app.post("/api/settings/branches", requireAuth, async (req, res) => {
+    try {
+      const branchData = insertBranchSchema.parse(req.body);
+      const branch = await storage.createBranch(branchData);
+      res.json(branch);
+    } catch (error) {
+      res.status(400).json({ message: "Dữ liệu chi nhánh không hợp lệ" });
+    }
+  });
+
+  app.put("/api/settings/branches/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updateData = insertBranchSchema.partial().parse(req.body);
+      const branch = await storage.updateBranch(id, updateData);
+      res.json(branch);
+    } catch (error) {
+      res.status(400).json({ message: "Lỗi khi cập nhật chi nhánh" });
+    }
+  });
+
+  app.delete("/api/settings/branches/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteBranch(id);
+      res.json({ message: "Xóa chi nhánh thành công" });
+    } catch (error) {
+      res.status(500).json({ message: "Lỗi khi xóa chi nhánh" });
     }
   });
 

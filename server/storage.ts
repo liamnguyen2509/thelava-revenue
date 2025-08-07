@@ -1,12 +1,13 @@
 import { 
   users, revenues, expenses, reserveAllocations, reserveExpenditures, allocationAccounts, 
-  shareholders, stockItems, stockTransactions, expenseCategories,
+  shareholders, stockItems, stockTransactions, expenseCategories, branches, systemSettings,
   type User, type InsertUser, type Revenue, type InsertRevenue,
   type Expense, type InsertExpense, type ReserveAllocation, type InsertReserveAllocation,
   type ReserveExpenditure, type InsertReserveExpenditure,
   type AllocationAccount, type InsertAllocationAccount, type Shareholder, type InsertShareholder,
   type StockItem, type InsertStockItem, type StockTransaction, type InsertStockTransaction,
-  type ExpenseCategory, type InsertExpenseCategory
+  type ExpenseCategory, type InsertExpenseCategory, type Branch, type InsertBranch,
+  type SystemSetting, type InsertSystemSetting
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql, desc } from "drizzle-orm";
@@ -42,8 +43,21 @@ interface IStorage {
   }>;
   getShareholders(): Promise<Shareholder[]>;
   createShareholder(insertShareholder: InsertShareholder): Promise<Shareholder>;
+  updateShareholder(id: string, updateData: Partial<InsertShareholder>): Promise<Shareholder>;
+  deleteShareholder(id: string): Promise<void>;
   getExpenseCategories(): Promise<ExpenseCategory[]>;
   createExpenseCategory(insertExpenseCategory: InsertExpenseCategory): Promise<ExpenseCategory>;
+  updateExpenseCategory(id: string, updateData: Partial<InsertExpenseCategory>): Promise<ExpenseCategory>;
+  deleteExpenseCategory(id: string): Promise<void>;
+  updateAllocationAccount(id: string, updateData: Partial<InsertAllocationAccount>): Promise<AllocationAccount>;
+  deleteAllocationAccount(id: string): Promise<void>;
+  getBranches(): Promise<Branch[]>;
+  createBranch(insertBranch: InsertBranch): Promise<Branch>;
+  updateBranch(id: string, updateData: Partial<InsertBranch>): Promise<Branch>;
+  deleteBranch(id: string): Promise<void>;
+  getSystemSettings(): Promise<SystemSetting[]>;
+  getSystemSetting(key: string): Promise<SystemSetting | undefined>;
+  upsertSystemSetting(key: string, value: string): Promise<SystemSetting>;
   getDashboardData(): Promise<any>;
 }
 
@@ -281,6 +295,91 @@ export class DatabaseStorage implements IStorage {
     });
     
     return { totalExpended, byAccount, monthlyExpenditure };
+  }
+
+  async updateShareholder(id: string, updateData: Partial<InsertShareholder>): Promise<Shareholder> {
+    const [shareholder] = await db
+      .update(shareholders)
+      .set(updateData)
+      .where(eq(shareholders.id, id))
+      .returning();
+    return shareholder;
+  }
+
+  async deleteShareholder(id: string): Promise<void> {
+    await db.delete(shareholders).where(eq(shareholders.id, id));
+  }
+
+  async updateExpenseCategory(id: string, updateData: Partial<InsertExpenseCategory>): Promise<ExpenseCategory> {
+    const [category] = await db
+      .update(expenseCategories)
+      .set(updateData)
+      .where(eq(expenseCategories.id, id))
+      .returning();
+    return category;
+  }
+
+  async deleteExpenseCategory(id: string): Promise<void> {
+    await db.delete(expenseCategories).where(eq(expenseCategories.id, id));
+  }
+
+  async updateAllocationAccount(id: string, updateData: Partial<InsertAllocationAccount>): Promise<AllocationAccount> {
+    const [account] = await db
+      .update(allocationAccounts)
+      .set(updateData)
+      .where(eq(allocationAccounts.id, id))
+      .returning();
+    return account;
+  }
+
+  async deleteAllocationAccount(id: string): Promise<void> {
+    await db.delete(allocationAccounts).where(eq(allocationAccounts.id, id));
+  }
+
+  async getBranches(): Promise<Branch[]> {
+    return await db.select().from(branches).where(eq(branches.isActive, true));
+  }
+
+  async createBranch(insertBranch: InsertBranch): Promise<Branch> {
+    const [branch] = await db
+      .insert(branches)
+      .values(insertBranch)
+      .returning();
+    return branch;
+  }
+
+  async updateBranch(id: string, updateData: Partial<InsertBranch>): Promise<Branch> {
+    const [branch] = await db
+      .update(branches)
+      .set(updateData)
+      .where(eq(branches.id, id))
+      .returning();
+    return branch;
+  }
+
+  async deleteBranch(id: string): Promise<void> {
+    await db.delete(branches).where(eq(branches.id, id));
+  }
+
+  async getSystemSettings(): Promise<SystemSetting[]> {
+    return await db.select().from(systemSettings);
+  }
+
+  async getSystemSetting(key: string): Promise<SystemSetting | undefined> {
+    const [setting] = await db.select().from(systemSettings).where(eq(systemSettings.key, key));
+    return setting || undefined;
+  }
+
+  async upsertSystemSetting(key: string, value: string): Promise<SystemSetting> {
+    const [setting] = await db
+      .insert(systemSettings)
+      .values({ key, value })
+      .onConflictDoUpdate({
+        target: systemSettings.key,
+        set: { value, updatedAt: new Date() }
+      })
+      .returning();
+    return setting;
   }
 
   async getDashboardData(): Promise<any> {

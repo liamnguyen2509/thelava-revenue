@@ -99,6 +99,22 @@ export const expenseCategories = pgTable("expense_categories", {
   isActive: boolean("is_active").notNull().default(true),
 });
 
+export const branches = pgTable("branches", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  address: text("address").notNull(),
+  phone: varchar("phone", { length: 20 }),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const systemSettings = pgTable("system_settings", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  key: text("key").notNull().unique(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const stockTransactionsRelations = relations(stockTransactions, ({ one }) => ({
   item: one(stockItems, {
@@ -160,6 +176,16 @@ export const insertExpenseCategorySchema = createInsertSchema(expenseCategories)
   id: true,
 });
 
+export const insertBranchSchema = createInsertSchema(branches).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertSystemSettingSchema = createInsertSchema(systemSettings).omit({
+  id: true,
+  updatedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -190,6 +216,12 @@ export type InsertStockTransaction = z.infer<typeof insertStockTransactionSchema
 
 export type ExpenseCategory = typeof expenseCategories.$inferSelect;
 export type InsertExpenseCategory = z.infer<typeof insertExpenseCategorySchema>;
+
+export type Branch = typeof branches.$inferSelect;
+export type InsertBranch = z.infer<typeof insertBranchSchema>;
+
+export type SystemSetting = typeof systemSettings.$inferSelect;
+export type InsertSystemSetting = z.infer<typeof insertSystemSettingSchema>;
 
 // Login schema
 export const loginSchema = z.object({
