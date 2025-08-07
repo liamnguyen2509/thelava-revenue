@@ -459,11 +459,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/settings/branches", requireAuth, async (req, res) => {
     try {
+      console.log("Branch POST request body:", req.body);
       const branchData = insertBranchSchema.parse(req.body);
+      console.log("Parsed branch data:", branchData);
       const branch = await storage.createBranch(branchData);
+      console.log("Created branch:", branch);
       res.json(branch);
     } catch (error) {
-      res.status(400).json({ message: "Dữ liệu chi nhánh không hợp lệ" });
+      console.error("Error creating branch:", error);
+      if (error instanceof Error) {
+        res.status(400).json({ message: `Lỗi: ${error.message}` });
+      } else {
+        res.status(400).json({ message: "Dữ liệu chi nhánh không hợp lệ" });
+      }
     }
   });
 

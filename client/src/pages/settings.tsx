@@ -208,6 +208,7 @@ export default function SettingsPage() {
 
   const createBranchMutation = useMutation({
     mutationFn: async (data: { name: string; address: string; phone?: string }) => {
+      console.log("Creating branch with data:", data);
       return await apiRequest("/api/settings/branches", "POST", data);
     },
     onSuccess: () => {
@@ -215,6 +216,14 @@ export default function SettingsPage() {
       setBranchForm({ name: "", address: "", phone: "" });
       setShowModal(false);
       toast({ title: "Thành công", description: "Thêm chi nhánh thành công" });
+    },
+    onError: (error: any) => {
+      console.error("Error creating branch:", error);
+      toast({ 
+        title: "Lỗi", 
+        description: error.message || "Không thể thêm chi nhánh", 
+        variant: "destructive" 
+      });
     }
   });
 
