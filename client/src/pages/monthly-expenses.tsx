@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Plus, Edit, Trash2, Calendar, DollarSign } from "lucide-react";
+import { useLocation } from "wouter";
 import type { SystemSetting, ExpenseCategory, Expense } from "@shared/schema";
 
 interface ExpenseFormData {
@@ -34,8 +35,15 @@ interface ExpenseFormData {
 
 export default function MonthlyExpenses() {
   const currentDate = new Date();
-  const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
+  const [location] = useLocation();
+  
+  // Parse URL parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  const monthFromUrl = urlParams.get('month');
+  const yearFromUrl = urlParams.get('year');
+  
+  const [selectedYear, setSelectedYear] = useState(yearFromUrl ? parseInt(yearFromUrl) : currentDate.getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(monthFromUrl ? parseInt(monthFromUrl) : currentDate.getMonth() + 1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [selectedExpenses, setSelectedExpenses] = useState<string[]>([]);

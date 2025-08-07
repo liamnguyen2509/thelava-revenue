@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,12 +12,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ExpenseModal } from "@/components/modals/expense-modal";
-import { Calendar, Plus } from "lucide-react";
-import type { SystemSetting, ExpenseCategory } from "@shared/schema";
+import { Calendar, Plus, Edit2 } from "lucide-react";
+import { useLocation } from "wouter";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import type { SystemSetting, ExpenseCategory, AllocationAccount } from "@shared/schema";
 
 export default function CashFlow() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
+  const [editingRevenue, setEditingRevenue] = useState<{ month: number; amount: number } | null>(null);
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: revenues, isLoading } = useQuery({
     queryKey: ["/api/revenues", selectedYear],
@@ -35,6 +42,11 @@ export default function CashFlow() {
   // Fetch expense categories from settings
   const { data: expenseCategories = [] } = useQuery<ExpenseCategory[]>({
     queryKey: ["/api/settings/expense-categories"],
+  });
+
+  // Fetch allocation accounts for profit distribution
+  const { data: allocationAccounts = [] } = useQuery<AllocationAccount[]>({
+    queryKey: ["/api/settings/allocation-accounts"],
   });
 
   const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
@@ -65,6 +77,45 @@ export default function CashFlow() {
     return expenses
       .filter((expense: any) => expense.month === monthIndex + 1)
       .reduce((sum: number, expense: any) => sum + parseFloat(expense.amount), 0);
+  };
+
+  // Mutation for updating revenue
+  const updateRevenueMutation = useMutation({
+    mutationFn: async (data: { month: number; year: number; amount: number }) => {
+      const res = await apiRequest("/api/revenues", "POST", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/revenues"] });
+      toast({
+        title: "Thành công",
+        description: "Doanh thu đã được cập nhật",
+      });
+      setEditingRevenue(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Lỗi",
+        description: error.message || "Có lỗi xảy ra khi cập nhật doanh thu",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleRowClick = (monthIndex: number) => {
+    setLocation(`/monthly-expenses?month=${monthIndex + 1}&year=${selectedYear}`);
+  };
+
+  const handleRevenueEdit = (month: number, currentAmount: number) => {
+    setEditingRevenue({ month, amount: currentAmount });
+  };
+
+  const handleRevenueUpdate = (month: number, newAmount: number) => {
+    updateRevenueMutation.mutate({
+      month: month,
+      year: selectedYear,
+      amount: newAmount,
+    });
   };
 
   if (isLoading) {
@@ -107,7 +158,7 @@ export default function CashFlow() {
           </div>
           <Button onClick={() => setIsExpenseModalOpen(true)} className="bg-tea-brown hover:bg-tea-brown/90">
             <Plus className="w-4 h-4 mr-2" />
-            Thêm chi phí
+            Thêm khoản chi
           </Button>
         </div>
       </div>
@@ -160,10 +211,52 @@ export default function CashFlow() {
                   const dailyAverage = monthRevenue > 0 ? monthRevenue / daysInMonth : 0;
 
                   return (
-                    <tr key={index} className="border-b border-gray-50 hover:bg-gray-50">
+                    <tr 
+                      key={index} 
+                      className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer"
+                      onClick={() => handleRowClick(index)}
+                    >
                       <td className="py-4 text-sm font-medium text-gray-900">{month}</td>
                       <td className="py-4 text-sm text-gray-900 text-right font-medium">
-                        {formatCurrency(monthRevenue)}
+                        <div className="flex items-center justify-end space-x-2">
+                          {editingRevenue?.month === index + 1 ? (
+                            <Input
+                              type="number"
+                              value={editingRevenue.amount}
+                              onChange={(e) => setEditingRevenue({
+                                ...editingRevenue,
+                                amount: parseFloat(e.target.value) || 0
+                              })}
+                              onBlur={() => handleRevenueUpdate(index + 1, editingRevenue.amount)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  handleRevenueUpdate(index + 1, editingRevenue.amount);
+                                }
+                                if (e.key === 'Escape') {
+                                  setEditingRevenue(null);
+                                }
+                              }}
+                              className="w-32 text-right"
+                              autoFocus
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          ) : (
+                            <>
+                              <span>{formatCurrency(monthRevenue)}</span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRevenueEdit(index + 1, monthRevenue);
+                                }}
+                                className="h-6 w-6 p-0"
+                              >
+                                <Edit2 className="h-3 w-3" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </td>
                       <td className="py-4 text-sm text-gray-900 text-right text-blue-600">
                         {formatCurrency(dailyAverage)}
@@ -233,13 +326,19 @@ export default function CashFlow() {
                   const totalExpenses = calculateTotalExpenses(index);
                   const netProfit = monthRevenue - totalExpenses;
 
-                  // Calculate allocations (these would come from settings in real app)
-                  const reinvestment = netProfit * 0.25;
-                  const depreciation = netProfit * 0.15;
-                  const riskReserve = netProfit * 0.20;
-                  const staffBonus = netProfit * 0.10;
-                  const dividends = netProfit * 0.20;
-                  const marketing = netProfit * 0.10;
+                  // Calculate allocations based on real settings
+                  const getAccountAllocation = (accountName: string) => {
+                    const account = allocationAccounts.find(acc => acc.name === accountName);
+                    const percentage = account?.percentage || 0;
+                    return (netProfit * percentage) / 100;
+                  };
+
+                  const reinvestment = getAccountAllocation("Tái đầu tư");
+                  const depreciation = getAccountAllocation("Khấu hao");
+                  const riskReserve = getAccountAllocation("Dự phòng rủi ro");
+                  const staffBonus = getAccountAllocation("Thưởng nhân viên");
+                  const dividends = getAccountAllocation("Cổ tức");
+                  const marketing = getAccountAllocation("Marketing");
 
                   return (
                     <tr key={index} className="border-b border-gray-50">

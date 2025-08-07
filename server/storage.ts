@@ -19,6 +19,7 @@ interface IStorage {
   createUser(insertUser: InsertUser): Promise<User>;
   getRevenuesByYear(year: number): Promise<Revenue[]>;
   createRevenue(insertRevenue: InsertRevenue): Promise<Revenue>;
+  upsertRevenue(insertRevenue: InsertRevenue): Promise<Revenue>;
   getRevenueSummary(): Promise<{ annual: number; monthly: number }>;
   getExpenses(year: number, month?: number): Promise<Expense[]>;
   createExpense(insertExpense: InsertExpense): Promise<Expense>;
@@ -93,6 +94,32 @@ export class DatabaseStorage implements IStorage {
       .values(insertRevenue)
       .returning();
     return revenue;
+  }
+
+  async upsertRevenue(insertRevenue: InsertRevenue): Promise<Revenue> {
+    // First try to find existing revenue for the same month and year
+    const existingRevenue = await db
+      .select()
+      .from(revenues)
+      .where(and(eq(revenues.year, insertRevenue.year), eq(revenues.month, insertRevenue.month)))
+      .limit(1);
+    
+    if (existingRevenue.length > 0) {
+      // Update existing revenue
+      const [revenue] = await db
+        .update(revenues)
+        .set(insertRevenue)
+        .where(eq(revenues.id, existingRevenue[0].id))
+        .returning();
+      return revenue;
+    } else {
+      // Create new revenue
+      const [revenue] = await db
+        .insert(revenues)
+        .values(insertRevenue)
+        .returning();
+      return revenue;
+    }
   }
 
   async getRevenueSummary(): Promise<{ annual: number; monthly: number }> {
@@ -252,9 +279,9 @@ export class DatabaseStorage implements IStorage {
           sql`EXTRACT(YEAR FROM ${reserveExpenditures.expenditureDate}) = ${year}`,
           sql`EXTRACT(MONTH FROM ${reserveExpenditures.expenditureDate}) = ${month}`
         )
-      );
+      ) as any;
     } else if (year) {
-      query = query.where(sql`EXTRACT(YEAR FROM ${reserveExpenditures.expenditureDate}) = ${year}`);
+      query = query.where(sql`EXTRACT(YEAR FROM ${reserveExpenditures.expenditureDate}) = ${year}`) as any;
     }
     
     return await query.orderBy(desc(reserveExpenditures.expenditureDate));
