@@ -43,7 +43,7 @@ export default function MonthlyExpenses() {
   const yearFromUrl = urlParams.get('year');
   
   const [selectedYear, setSelectedYear] = useState(yearFromUrl ? parseInt(yearFromUrl) : currentDate.getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState(monthFromUrl ? parseInt(monthFromUrl) : currentDate.getMonth() + 1);
+  const [selectedMonth, setSelectedMonth] = useState(monthFromUrl ? parseInt(monthFromUrl) : 1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [selectedExpenses, setSelectedExpenses] = useState<string[]>([]);
@@ -62,15 +62,7 @@ export default function MonthlyExpenses() {
   // Fetch data
   const { data: expenses = [], isLoading } = useQuery<Expense[]>({
     queryKey: ["/api/expenses", selectedYear, selectedMonth],
-    queryFn: async () => {
-      const params = new URLSearchParams({
-        year: selectedYear.toString(),
-        month: selectedMonth.toString()
-      });
-      const response = await fetch(`/api/expenses?${params}`);
-      if (!response.ok) throw new Error('Failed to fetch expenses');
-      return response.json();
-    },
+    queryFn: () => apiRequest(`/api/expenses?year=${selectedYear}&month=${selectedMonth}`),
   });
 
   const { data: systemSettings = [] } = useQuery<SystemSetting[]>({
