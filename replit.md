@@ -20,6 +20,7 @@ Preferred communication style: Simple, everyday language.
 - **Styling**: Tailwind CSS with custom tea-themed color palette (tea-brown, tea-light, tea-cream) for brand consistency
 - **Build Tool**: Vite for fast development and optimized production builds
 - **Form Management**: React Hook Form with Zod for type-safe form validation
+- **Component Structure**: Feature-based organization with reusable components and modals
 
 ### Backend Architecture
 - **Runtime**: Node.js with Express.js framework for RESTful API endpoints
@@ -47,5 +48,27 @@ Preferred communication style: Simple, everyday language.
 - **Development Tools**: Replit-specific plugins for development environment integration
 - **Fonts**: Google Fonts (Inter) for consistent typography
 - **Build Tools**: ESBuild for server-side bundling, PostCSS for CSS processing
+
+## Design Patterns & Architecture
+
+### Applied Patterns
+- **Repository Pattern**: Database operations abstracted through IStorage interface
+- **MVC Pattern**: Clear separation of Models (Drizzle schemas), Views (React components), Controllers (Express routes)
+- **Facade Pattern**: Simplified API interactions through apiRequest wrapper
+- **Component-Based Architecture**: Modular, reusable UI components with consistent interfaces
+- **Domain-Driven Design**: Feature-based folder structure organizing code by business domains
+
+### Code Organization Principles
+- **Separation of Concerns**: Clear boundaries between data, business logic, and presentation layers
+- **Type Safety**: Comprehensive TypeScript usage with shared schema definitions
+- **Consistent Error Handling**: Standardized error patterns across API calls and UI feedback
+- **Scalable Structure**: Modular components and services designed for easy extension
+
+### Maintainability Features
+- **Shared Schema**: Single source of truth for data types (`shared/schema.ts`)
+- **Centralized API Logic**: Consistent request handling through queryClient
+- **Reusable Components**: Modular UI components with consistent props interfaces
+- **Configuration Management**: System settings stored in database for runtime configuration
+- **Internationalization Ready**: Vietnamese text centralized for easy translation updates
 
 The application follows a monolithic architecture with clear separation between client and server code, shared schema definitions, and a structured component hierarchy. The system is designed for scalability and maintainability while providing a smooth user experience across different device types.
