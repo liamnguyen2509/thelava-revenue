@@ -271,11 +271,18 @@ export default function MonthlyExpenses() {
 
   const handleEdit = (expense: Expense) => {
     setEditingExpense(expense);
+    
+    // Format date from yyyy-mm-dd to input format
+    const formattedDate = expense.expenseDate;
+    
+    // Format amount - remove decimal .00 if present and convert to string
+    const formattedAmount = parseFloat(expense.amount).toString();
+    
     setFormData({
       name: expense.name,
       category: expense.category,
-      amount: expense.amount,
-      expenseDate: expense.expenseDate,
+      amount: formattedAmount,
+      expenseDate: formattedDate,
       status: expense.status,
       notes: expense.notes || "",
     });
@@ -574,7 +581,7 @@ export default function MonthlyExpenses() {
                 </SelectTrigger>
                 <SelectContent>
                   {expenseCategories.map((category) => (
-                    <SelectItem key={category.id} value={category.name}>
+                    <SelectItem key={category.id} value={category.code}>
                       {category.name}
                     </SelectItem>
                   ))}
