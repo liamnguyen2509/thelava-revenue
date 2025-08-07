@@ -94,7 +94,10 @@ export default function MonthlyExpenses() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('vi-VN');
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
   };
 
   // Calculate summary data
@@ -220,6 +223,24 @@ export default function MonthlyExpenses() {
       });
     },
   });
+
+  const formatAmountForDisplay = (amount: string): string => {
+    const numericValue = amount.replace(/\D/g, '');
+    if (!numericValue || numericValue === '0') return '';
+    return parseInt(numericValue).toLocaleString('vi-VN').replace(/,/g, '.');
+  };
+
+  const parseAmountFromDisplay = (displayAmount: string): string => {
+    const numericValue = displayAmount.replace(/\D/g, '');
+    return numericValue || '0';
+  };
+
+  const handleAmountChange = (value: string) => {
+    // Only allow numbers and dots
+    const cleaned = value.replace(/[^0-9.]/g, '');
+    const rawValue = parseAmountFromDisplay(cleaned);
+    setFormData(prev => ({ ...prev, amount: rawValue }));
+  };
 
   const resetForm = () => {
     setFormData({
@@ -557,10 +578,10 @@ export default function MonthlyExpenses() {
               <Label htmlFor="amount">Số tiền ({getCurrency()})</Label>
               <Input
                 id="amount"
-                type="number"
+                type="text"
                 placeholder="0"
-                value={formData.amount}
-                onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
+                value={formatAmountForDisplay(formData.amount)}
+                onChange={(e) => handleAmountChange(e.target.value)}
               />
             </div>
 
