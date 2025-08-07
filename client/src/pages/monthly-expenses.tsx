@@ -18,9 +18,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Plus, Edit, Trash2, Calendar, DollarSign } from "lucide-react";
+import { Plus, Edit, Trash2, Calendar, DollarSign, ChevronLeft, ChevronRight } from "lucide-react";
 import { useLocation } from "wouter";
 import type { SystemSetting, ExpenseCategory, Expense } from "@shared/schema";
 
@@ -47,6 +57,11 @@ export default function MonthlyExpenses() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [selectedExpenses, setSelectedExpenses] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteMultipleDialogOpen, setDeleteMultipleDialogOpen] = useState(false);
+  const [expenseToDelete, setExpenseToDelete] = useState<string | null>(null);
+  const itemsPerPage = 10;
   const [formData, setFormData] = useState<ExpenseFormData>({
     name: "",
     category: "",
@@ -88,6 +103,12 @@ export default function MonthlyExpenses() {
     const currencySetting = systemSettings.find(s => s.key === "currency");
     return currencySetting?.value || "VNĐ";
   };
+
+  // Reset current page when year/month changes
+  useEffect(() => {
+    setCurrentPage(1);
+    setSelectedExpenses([]);
+  }, [selectedYear, selectedMonth]);
 
   const formatCurrency = (amount: number) => {
     return Math.round(amount).toLocaleString('vi-VN').replace(/,/g, '.') + " " + getCurrency();
@@ -140,8 +161,15 @@ export default function MonthlyExpenses() {
 
   const summary = calculateSummary();
   
-  // Dữ liệu expenses đã được filter từ API
-  const filteredExpenses = Array.isArray(expenses) ? expenses : [];
+  // Dữ liệu expenses đã được filter từ API, sort by date descending (mới nhất trước)
+  const sortedExpenses = Array.isArray(expenses) ? 
+    [...expenses].sort((a, b) => new Date(b.expenseDate).getTime() - new Date(a.expenseDate).getTime()) : [];
+  
+  // Pagination
+  const totalPages = Math.ceil(sortedExpenses.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const filteredExpenses = sortedExpenses.slice(startIndex, endIndex);
 
   // Mutations
   const createMutation = useMutation({
@@ -290,16 +318,26 @@ export default function MonthlyExpenses() {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm("Bạn có chắc chắn muốn xóa chi phí này?")) {
-      deleteMutation.mutate(id);
+    setExpenseToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (expenseToDelete) {
+      deleteMutation.mutate(expenseToDelete);
+      setDeleteDialogOpen(false);
+      setExpenseToDelete(null);
     }
   };
 
   const handleDeleteMultiple = () => {
     if (selectedExpenses.length === 0) return;
-    if (confirm(`Bạn có chắc chắn muốn xóa ${selectedExpenses.length} chi phí đã chọn?`)) {
-      deleteMultipleMutation.mutate(selectedExpenses);
-    }
+    setDeleteMultipleDialogOpen(true);
+  };
+
+  const confirmDeleteMultiple = () => {
+    deleteMultipleMutation.mutate(selectedExpenses);
+    setDeleteMultipleDialogOpen(false);
   };
 
   const toggleSelectExpense = (id: string) => {
@@ -309,12 +347,10 @@ export default function MonthlyExpenses() {
   };
 
   const toggleSelectAll = () => {
-    const expensesForToggle = Array.isArray(expenses) ? expenses : [];
-    
-    if (selectedExpenses.length === expensesForToggle.length) {
+    if (selectedExpenses.length === filteredExpenses.length) {
       setSelectedExpenses([]);
     } else {
-      setSelectedExpenses(expensesForToggle.map((e: Expense) => e.id));
+      setSelectedExpenses(filteredExpenses.map((e: Expense) => e.id));
     }
   };
 
@@ -601,7 +637,7 @@ export default function MonthlyExpenses() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="expenseDate">Ngày chi</Label>
+              <Label htmlFor="expenseDate">Ngày chi (dd/mm/yyyy)</Label>
               <Input
                 id="expenseDate"
                 type="date"
@@ -658,6 +694,106 @@ export default function MonthlyExpenses() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-6">
+          <div className="text-sm text-gray-700">
+            Hiển thị {startIndex + 1}-{Math.min(endIndex, sortedExpenses.length)} trong {sortedExpenses.length} kết quả
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Trước
+            </Button>
+            
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter(page => {
+                return page === 1 || page === totalPages || 
+                       (page >= currentPage - 1 && page <= currentPage + 1);
+              })
+              .map((page, index, filteredPages) => {
+                const showLeftEllipsis = index === 1 && filteredPages[0] === 1 && filteredPages[1] > 2;
+                const showRightEllipsis = index === filteredPages.length - 2 && 
+                  filteredPages[filteredPages.length - 1] === totalPages && 
+                  filteredPages[filteredPages.length - 2] < totalPages - 1;
+                
+                return (
+                  <div key={page} className="flex items-center">
+                    {showLeftEllipsis && <span className="px-2">...</span>}
+                    <Button
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(page)}
+                      className={currentPage === page ? "bg-tea-brown hover:bg-tea-brown/90" : ""}
+                    >
+                      {page}
+                    </Button>
+                    {showRightEllipsis && <span className="px-2">...</span>}
+                  </div>
+                );
+              })}
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+            >
+              Sau
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Single Item Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa khoản chi phí này? Hành động này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Xóa
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Multiple Items Dialog */}
+      <AlertDialog open={deleteMultipleDialogOpen} onOpenChange={setDeleteMultipleDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa nhiều mục</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa {selectedExpenses.length} khoản chi phí đã chọn? 
+              Hành động này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDeleteMultiple}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Xóa {selectedExpenses.length} mục
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
