@@ -5,6 +5,7 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -68,7 +69,7 @@ export function ExpenseModal({ isOpen, onClose }: ExpenseModalProps) {
 
   const expenseMutation = useMutation({
     mutationFn: async (data: InsertExpense) => {
-      const res = await apiRequest("POST", "/api/expenses", data);
+      const res = await apiRequest("/api/expenses", "POST", data);
       return res.json();
     },
     onSuccess: () => {
@@ -106,6 +107,9 @@ export function ExpenseModal({ isOpen, onClose }: ExpenseModalProps) {
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Thêm chi phí mới</DialogTitle>
+          <DialogDescription>
+            Nhập thông tin chi phí hàng tháng cho cửa hàng trà sữa
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
