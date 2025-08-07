@@ -22,6 +22,8 @@ interface IStorage {
   getRevenueSummary(): Promise<{ annual: number; monthly: number }>;
   getExpenses(year: number, month?: number): Promise<Expense[]>;
   createExpense(insertExpense: InsertExpense): Promise<Expense>;
+  updateExpense(id: string, updateData: Partial<InsertExpense>): Promise<Expense>;
+  deleteExpense(id: string): Promise<void>;
   getExpenseSummary(): Promise<{ monthly: number }>;
   getStockItems(): Promise<StockItem[]>;
   createStockItem(insertStockItem: InsertStockItem): Promise<StockItem>;
@@ -121,6 +123,19 @@ export class DatabaseStorage implements IStorage {
       .values(insertExpense)
       .returning();
     return expense;
+  }
+
+  async updateExpense(id: string, updateData: Partial<InsertExpense>): Promise<Expense> {
+    const [expense] = await db
+      .update(expenses)
+      .set(updateData)
+      .where(eq(expenses.id, id))
+      .returning();
+    return expense;
+  }
+
+  async deleteExpense(id: string): Promise<void> {
+    await db.delete(expenses).where(eq(expenses.id, id));
   }
 
   async getExpenseSummary(): Promise<{ monthly: number }> {

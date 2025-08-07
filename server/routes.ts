@@ -141,6 +141,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/expenses/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updateData = insertExpenseSchema.partial().parse(req.body);
+      const expense = await storage.updateExpense(id, updateData);
+      res.json(expense);
+    } catch (error) {
+      res.status(400).json({ message: "Không thể cập nhật chi phí" });
+    }
+  });
+
+  app.delete("/api/expenses/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteExpense(id);
+      res.json({ message: "Đã xóa chi phí" });
+    } catch (error) {
+      res.status(500).json({ message: "Không thể xóa chi phí" });
+    }
+  });
+
   app.get("/api/expenses/summary", requireAuth, async (req, res) => {
     try {
       const summary = await storage.getExpenseSummary();
