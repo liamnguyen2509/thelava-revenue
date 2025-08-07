@@ -99,11 +99,15 @@ export default function MonthlyExpenses() {
     return `${day}/${month}/${year}`;
   };
 
+
+
   // Calculate summary data
   const calculateSummary = () => {
     const filteredExpenses = Array.isArray(expenses) ? expenses.filter((expense: Expense) => 
       expense.year === selectedYear && expense.month === selectedMonth
     ) : [];
+    
+
 
     const salaryTotal = filteredExpenses
       .filter((e: Expense) => e.category === "staff_salary")
