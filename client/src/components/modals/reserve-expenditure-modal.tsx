@@ -30,20 +30,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { insertReserveExpenditureSchema } from "@shared/schema";
-import type { InsertReserveExpenditure, ReserveExpenditure } from "@shared/schema";
+import type { InsertReserveExpenditure, ReserveExpenditure, AllocationAccount } from "@shared/schema";
 
 interface ReserveExpenditureModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   expenditure?: ReserveExpenditure | null;
 }
-
-const sourceTypes = [
-  { value: "reinvestment", label: "Tái đầu tư" },
-  { value: "depreciation", label: "Khấu hao" },
-  { value: "risk_reserve", label: "Rủi ro" },
-  { value: "staff_bonus", label: "Lương thưởng" },
-];
 
 export default function ReserveExpenditureModal({
   open,
@@ -53,6 +46,21 @@ export default function ReserveExpenditureModal({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isEditing = !!expenditure;
+
+  // Fetch allocation accounts from settings
+  const { data: allocationAccounts = [] } = useQuery<AllocationAccount[]>({
+    queryKey: ["/api/settings/allocation-accounts"],
+  });
+
+  // Fetch system settings for currency
+  const { data: systemSettings = [] } = useQuery({
+    queryKey: ["/api/settings/system"],
+  });
+
+  const getCurrency = () => {
+    const currencySetting = systemSettings.find((s: any) => s.key === "currency");
+    return currencySetting?.value || "VNĐ";
+  };
 
   const form = useForm<InsertReserveExpenditure>({
     resolver: zodResolver(insertReserveExpenditureSchema),
@@ -215,9 +223,9 @@ export default function ReserveExpenditureModal({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {sourceTypes.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                          {type.label}
+                      {allocationAccounts.map((account) => (
+                        <SelectItem key={account.id} value={account.name}>
+                          {account.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -232,7 +240,7 @@ export default function ReserveExpenditureModal({
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tiền chi (VNĐ)</FormLabel>
+                  <FormLabel>Tiền chi ({getCurrency()})</FormLabel>
                   <FormControl>
                     <Input
                       placeholder="0"

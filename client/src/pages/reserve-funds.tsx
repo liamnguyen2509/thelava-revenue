@@ -30,7 +30,7 @@ import ConfirmDeleteModal from "@/components/modals/confirm-delete-modal";
 import ExpenditurePieChart from "@/components/charts/expenditure-pie-chart";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import type { ReserveAllocation, AllocationAccount, ReserveExpenditure } from "@shared/schema";
+import type { ReserveAllocation, AllocationAccount, ReserveExpenditure, SystemSetting } from "@shared/schema";
 
 interface SummaryData {
   total: number;
@@ -99,6 +99,16 @@ export default function ReserveFunds() {
     queryFn: () => fetch(`/api/reserve-expenditures/summary/${selectedYear}`).then(res => res.json()),
   });
 
+  // Fetch system settings for currency
+  const { data: systemSettings = [] } = useQuery<SystemSetting[]>({
+    queryKey: ["/api/settings/system"],
+  });
+
+  // Fetch allocation accounts from settings
+  const { data: allocationAccounts = [] } = useQuery<AllocationAccount[]>({
+    queryKey: ["/api/settings/allocation-accounts"],
+  });
+
   const deleteExpenditureMutation = useMutation({
     mutationFn: async (id: string) => {
       const res = await apiRequest("DELETE", `/api/reserve-expenditures/${id}`);
@@ -133,7 +143,9 @@ export default function ReserveFunds() {
   });
 
   const formatCurrency = (amount: string | number) => {
-    return Math.round(parseFloat(amount.toString())).toLocaleString('vi-VN').replace(/,/g, '.');
+    const currencySetting = systemSettings.find(s => s.key === "currency");
+    const currency = currencySetting?.value || "VNĐ";
+    return Math.round(parseFloat(amount.toString())).toLocaleString('vi-VN').replace(/,/g, '.') + " " + currency;
   };
 
   const formatMonth = (month: number) => {

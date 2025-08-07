@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -29,21 +29,12 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { insertReserveAllocationSchema } from "@shared/schema";
-import type { InsertReserveAllocation } from "@shared/schema";
+import type { InsertReserveAllocation, AllocationAccount } from "@shared/schema";
 
 interface ReserveAllocationModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
-
-const accountTypes = [
-  { value: "reinvestment", label: "Tái đầu tư" },
-  { value: "depreciation", label: "Khấu hao" },
-  { value: "risk_reserve", label: "Dự phòng rủi ro" },
-  { value: "staff_bonus", label: "Thưởng nhân viên" },
-  { value: "dividends", label: "Cổ tức" },
-  { value: "marketing", label: "Marketing" },
-];
 
 export default function ReserveAllocationModal({
   open,
@@ -51,6 +42,21 @@ export default function ReserveAllocationModal({
 }: ReserveAllocationModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Fetch allocation accounts from settings
+  const { data: allocationAccounts = [] } = useQuery<AllocationAccount[]>({
+    queryKey: ["/api/settings/allocation-accounts"],
+  });
+
+  // Fetch system settings for currency
+  const { data: systemSettings = [] } = useQuery({
+    queryKey: ["/api/settings/system"],
+  });
+
+  const getCurrency = () => {
+    const currencySetting = systemSettings.find((s: any) => s.key === "currency");
+    return currencySetting?.value || "VNĐ";
+  };
 
   const form = useForm<InsertReserveAllocation>({
     resolver: zodResolver(insertReserveAllocationSchema),
@@ -178,9 +184,9 @@ export default function ReserveAllocationModal({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {accountTypes.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                          {type.label}
+                      {allocationAccounts.map((account) => (
+                        <SelectItem key={account.id} value={account.name}>
+                          {account.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -195,7 +201,7 @@ export default function ReserveAllocationModal({
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Số tiền (VNĐ)</FormLabel>
+                  <FormLabel>Số tiền ({getCurrency()})</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
