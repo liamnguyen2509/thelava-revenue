@@ -40,6 +40,10 @@ export default function CashFlow() {
     }).format(amount);
   };
 
+  const getDaysInMonth = (month: number, year: number) => {
+    return new Date(year, month, 0).getDate();
+  };
+
   const calculateExpensesByCategory = (monthIndex: number, category: string) => {
     if (!expenses) return 0;
     return expenses
@@ -112,10 +116,15 @@ export default function CashFlow() {
                 <tr className="border-b border-gray-200">
                   <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Tháng</th>
                   <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Doanh thu</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">DT TB Ngày</th>
                   <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Lương NV</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Tỷ lệ Lương</th>
                   <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Nguyên liệu</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Tỷ lệ NPL</th>
                   <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Chi phí cố định</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Tỷ lệ CP Cố định</th>
                   <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Chi phí khác</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Tỷ lệ CP Phát Sinh</th>
                   <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Lợi nhuận ròng</th>
                   <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Tỷ lệ LN</th>
                 </tr>
@@ -130,6 +139,16 @@ export default function CashFlow() {
                   const totalExpenses = staffSalary + ingredients + fixedExpenses + additionalExpenses;
                   const netProfit = monthRevenue - totalExpenses;
                   const profitRatio = monthRevenue > 0 ? ((netProfit / monthRevenue) * 100).toFixed(1) : "0";
+                  
+                  // Calculate new ratios
+                  const salaryRatio = monthRevenue > 0 ? ((staffSalary / monthRevenue) * 100).toFixed(1) : "0";
+                  const ingredientsRatio = monthRevenue > 0 ? ((ingredients / monthRevenue) * 100).toFixed(1) : "0";
+                  const fixedRatio = monthRevenue > 0 ? ((fixedExpenses / monthRevenue) * 100).toFixed(1) : "0";
+                  const additionalRatio = monthRevenue > 0 ? ((additionalExpenses / monthRevenue) * 100).toFixed(1) : "0";
+                  
+                  // Calculate daily average revenue
+                  const daysInMonth = getDaysInMonth(index + 1, selectedYear);
+                  const dailyAverage = monthRevenue > 0 ? monthRevenue / daysInMonth : 0;
 
                   return (
                     <tr key={index} className="border-b border-gray-50 hover:bg-gray-50">
@@ -137,17 +156,32 @@ export default function CashFlow() {
                       <td className="py-4 text-sm text-gray-900 text-right font-medium">
                         {formatCurrency(monthRevenue)}
                       </td>
+                      <td className="py-4 text-sm text-gray-900 text-right text-blue-600">
+                        {formatCurrency(dailyAverage)}
+                      </td>
                       <td className="py-4 text-sm text-gray-900 text-right">
                         {formatCurrency(staffSalary)}
+                      </td>
+                      <td className="py-4 text-sm text-gray-600 text-right">
+                        {salaryRatio}%
                       </td>
                       <td className="py-4 text-sm text-gray-900 text-right">
                         {formatCurrency(ingredients)}
                       </td>
+                      <td className="py-4 text-sm text-gray-600 text-right">
+                        {ingredientsRatio}%
+                      </td>
                       <td className="py-4 text-sm text-gray-900 text-right">
                         {formatCurrency(fixedExpenses)}
                       </td>
+                      <td className="py-4 text-sm text-gray-600 text-right">
+                        {fixedRatio}%
+                      </td>
                       <td className="py-4 text-sm text-gray-900 text-right">
                         {formatCurrency(additionalExpenses)}
+                      </td>
+                      <td className="py-4 text-sm text-gray-600 text-right">
+                        {additionalRatio}%
                       </td>
                       <td className={`py-4 text-sm text-right font-medium ${netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {formatCurrency(netProfit)}
