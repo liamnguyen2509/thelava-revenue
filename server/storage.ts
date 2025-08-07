@@ -8,7 +8,7 @@ import {
   type ExpenseCategory, type InsertExpenseCategory
 } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 // IStorage Interface
 interface IStorage {
@@ -72,11 +72,10 @@ export class DatabaseStorage implements IStorage {
     
     const annualRevenues = await db.select().from(revenues).where(eq(revenues.year, currentYear));
     const monthlyRevenues = await db.select().from(revenues)
-      .where(eq(revenues.year, currentYear))
-      .where(eq(revenues.month, currentMonth));
+      .where(and(eq(revenues.year, currentYear), eq(revenues.month, currentMonth)));
     
-    const annual = annualRevenues.reduce((sum, r) => sum + parseFloat(r.amount), 0);
-    const monthly = monthlyRevenues.reduce((sum, r) => sum + parseFloat(r.amount), 0);
+    const annual = annualRevenues.reduce((sum: number, r: Revenue) => sum + parseFloat(r.amount), 0);
+    const monthly = monthlyRevenues.reduce((sum: number, r: Revenue) => sum + parseFloat(r.amount), 0);
     
     return { annual, monthly };
   }
@@ -84,8 +83,7 @@ export class DatabaseStorage implements IStorage {
   async getExpenses(year: number, month?: number): Promise<Expense[]> {
     if (month) {
       return await db.select().from(expenses)
-        .where(eq(expenses.year, year))
-        .where(eq(expenses.month, month));
+        .where(and(eq(expenses.year, year), eq(expenses.month, month)));
     }
     return await db.select().from(expenses).where(eq(expenses.year, year));
   }
@@ -103,10 +101,9 @@ export class DatabaseStorage implements IStorage {
     const currentMonth = new Date().getMonth() + 1;
     
     const monthlyExpenses = await db.select().from(expenses)
-      .where(eq(expenses.year, currentYear))
-      .where(eq(expenses.month, currentMonth));
+      .where(and(eq(expenses.year, currentYear), eq(expenses.month, currentMonth)));
     
-    const monthly = monthlyExpenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
+    const monthly = monthlyExpenses.reduce((sum: number, e: Expense) => sum + parseFloat(e.amount), 0);
     
     return { monthly };
   }
