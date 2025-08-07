@@ -223,10 +223,11 @@ export default function ReserveExpenditureModal({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="reinvestment">Tái đầu tư</SelectItem>
-                      <SelectItem value="depreciation">Khấu hao</SelectItem>
-                      <SelectItem value="risk_reserve">Rủi ro</SelectItem>
-                      <SelectItem value="staff_bonus">Lương thưởng</SelectItem>
+                      {allocationAccounts.map((account) => (
+                        <SelectItem key={account.id} value={account.name}>
+                          {account.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />

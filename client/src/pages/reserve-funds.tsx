@@ -43,25 +43,22 @@ interface ExpenditureSummaryData {
   monthlyExpenditure: { [month: number]: { [account: string]: number } };
 }
 
-const accountTypeLabels: { [key: string]: string } = {
-  reinvestment: "Tái đầu tư",
-  depreciation: "Khấu hao", 
-  risk_reserve: "Rủi ro",
-  staff_bonus: "Lương thưởng",
+// Dynamic account data will be loaded from settings
+const getAccountTypeColor = (index: number) => {
+  const colors = [
+    "bg-green-100 text-green-800",
+    "bg-yellow-100 text-yellow-800", 
+    "bg-red-100 text-red-800",
+    "bg-blue-100 text-blue-800",
+    "bg-purple-100 text-purple-800",
+    "bg-pink-100 text-pink-800",
+  ];
+  return colors[index % colors.length];
 };
 
-const accountTypeColors: { [key: string]: string } = {
-  reinvestment: "bg-green-100 text-green-800",
-  depreciation: "bg-yellow-100 text-yellow-800",
-  risk_reserve: "bg-red-100 text-red-800", 
-  staff_bonus: "bg-blue-100 text-blue-800",
-};
-
-const accountTypeIcons: { [key: string]: any } = {
-  reinvestment: TrendingUp,
-  depreciation: DollarSign,
-  risk_reserve: AlertTriangle,
-  staff_bonus: Users,
+const getAccountTypeIcon = (index: number) => {
+  const icons = [TrendingUp, DollarSign, AlertTriangle, Users, Target, PieChart];
+  return icons[index % icons.length];
 };
 
 export default function ReserveFunds() {
@@ -153,10 +150,14 @@ export default function ReserveFunds() {
     return Math.round(parseFloat(amount.toString())).toLocaleString('vi-VN').replace(/,/g, '.') + " " + currency;
   };
 
-  // Function to get account name by id
-  const getAccountName = (accountId: string) => {
-    const account = allocationAccounts.find(acc => acc.id === accountId);
-    return account ? account.name : accountId;
+  // Function to get account data
+  const getAccountByName = (accountName: string) => {
+    return allocationAccounts.find(acc => acc.name === accountName);
+  };
+
+  const getAccountColor = (accountName: string) => {
+    const index = allocationAccounts.findIndex(acc => acc.name === accountName);
+    return index >= 0 ? getAccountTypeColor(index) : "bg-gray-100 text-gray-800";
   };
 
   const formatMonth = (month: number) => {
@@ -252,71 +253,36 @@ export default function ReserveFunds() {
         </div>
       </div>
 
-      {/* 5 Summary Cards with colors like monthly expenses page */}
+      {/* Dynamic Summary Cards based on allocation accounts */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        {/* Tái đầu tư */}
-        <Card className="border-green-200 bg-gradient-to-br from-green-50 to-green-100">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-green-800">Tái đầu tư</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl font-bold text-green-900">
-              {expenditureSummary?.byAccount?.reinvestment ? formatCurrency(expenditureSummary.byAccount.reinvestment) : "0"}
-            </div>
-            <p className="text-xs text-green-600">
-              Đã chi năm {selectedYear}
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Khấu hao */}
-        <Card className="border-yellow-200 bg-gradient-to-br from-yellow-50 to-yellow-100">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-yellow-800">Khấu hao</CardTitle>
-            <DollarSign className="h-4 w-4 text-yellow-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl font-bold text-yellow-900">
-              {expenditureSummary?.byAccount?.depreciation ? formatCurrency(expenditureSummary.byAccount.depreciation) : "0"}
-            </div>
-            <p className="text-xs text-yellow-600">
-              Đã chi năm {selectedYear}
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Rủi ro */}
-        <Card className="border-red-200 bg-gradient-to-br from-red-50 to-red-100">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-red-800">Rủi ro</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl font-bold text-red-900">
-              {expenditureSummary?.byAccount?.risk_reserve ? formatCurrency(expenditureSummary.byAccount.risk_reserve) : "0"}
-            </div>
-            <p className="text-xs text-red-600">
-              Đã chi năm {selectedYear}
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Lương thưởng */}
-        <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-blue-800">Lương thưởng</CardTitle>
-            <Users className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl font-bold text-blue-900">
-              {expenditureSummary?.byAccount?.staff_bonus ? formatCurrency(expenditureSummary.byAccount.staff_bonus) : "0"}
-            </div>
-            <p className="text-xs text-blue-600">
-              Đã chi năm {selectedYear}
-            </p>
-          </CardContent>
-        </Card>
+        {allocationAccounts.slice(0, 4).map((account, index) => {
+          const colorStyles = [
+            { border: 'border-green-200', bg: 'bg-gradient-to-br from-green-50 to-green-100', text: 'text-green-900', icon: 'text-green-600' },
+            { border: 'border-yellow-200', bg: 'bg-gradient-to-br from-yellow-50 to-yellow-100', text: 'text-yellow-900', icon: 'text-yellow-600' },
+            { border: 'border-red-200', bg: 'bg-gradient-to-br from-red-50 to-red-100', text: 'text-red-900', icon: 'text-red-600' },
+            { border: 'border-blue-200', bg: 'bg-gradient-to-br from-blue-50 to-blue-100', text: 'text-blue-900', icon: 'text-blue-600' }
+          ];
+          const style = colorStyles[index % colorStyles.length];
+          const IconComponent = getAccountTypeIcon(index);
+          const amount = expenditureSummary?.byAccount?.[account.name] || 0;
+          
+          return (
+            <Card key={account.id} className={`${style.border} ${style.bg}`}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className={`text-sm font-medium ${style.text}`}>{account.name}</CardTitle>
+                <IconComponent className={`h-4 w-4 ${style.icon}`} />
+              </CardHeader>
+              <CardContent>
+                <div className={`text-xl font-bold ${style.text}`}>
+                  {amount ? formatCurrency(amount) : "0"}
+                </div>
+                <p className={`text-xs ${style.icon}`}>
+                  Đã chi năm {selectedYear}
+                </p>
+              </CardContent>
+            </Card>
+          );
+        })}
 
         {/* Tổng chi */}
         <Card className="border-tea-brown bg-gradient-to-br from-tea-light to-tea-cream">
@@ -349,10 +315,9 @@ export default function ReserveFunds() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Tháng</TableHead>
-                    <TableHead className="text-right">Tái đầu tư</TableHead>
-                    <TableHead className="text-right">Khấu hao</TableHead>
-                    <TableHead className="text-right">Rủi ro</TableHead>
-                    <TableHead className="text-right">Lương thưởng</TableHead>
+                    {allocationAccounts.slice(0, 4).map((account) => (
+                      <TableHead key={account.id} className="text-right">{account.name}</TableHead>
+                    ))}
                     <TableHead className="text-right">Tổng</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -364,18 +329,11 @@ export default function ReserveFunds() {
                     return (
                       <TableRow key={month}>
                         <TableCell className="font-medium">Tháng {month}</TableCell>
-                        <TableCell className="text-right">
-                          {monthData.reinvestment ? formatCurrency(monthData.reinvestment) : "0"}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {monthData.depreciation ? formatCurrency(monthData.depreciation) : "0"}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {monthData.risk_reserve ? formatCurrency(monthData.risk_reserve) : "0"}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {monthData.staff_bonus ? formatCurrency(monthData.staff_bonus) : "0"}
-                        </TableCell>
+                        {allocationAccounts.slice(0, 4).map((account) => (
+                          <TableCell key={account.id} className="text-right">
+                            {monthData[account.name] ? formatCurrency(monthData[account.name]) : "0"}
+                          </TableCell>
+                        ))}
                         <TableCell className="text-right font-semibold">
                           {monthTotal > 0 ? formatCurrency(monthTotal) : "0"}
                         </TableCell>
@@ -405,15 +363,15 @@ export default function ReserveFunds() {
                 </div>
                 
                 <div className="space-y-3">
-                  {Object.entries(accountTypeLabels).map(([key, label]) => {
-                    const amount = expenditureSummary?.byAccount?.[key] || 0;
-                    const Icon = accountTypeIcons[key];
+                  {allocationAccounts.map((account, index) => {
+                    const amount = expenditureSummary?.byAccount?.[account.name] || 0;
+                    const Icon = getAccountTypeIcon(index);
                     
                     return (
-                      <div key={key} className="flex justify-between items-center">
+                      <div key={account.id} className="flex justify-between items-center">
                         <div className="flex items-center space-x-2">
                           <Icon className="h-4 w-4 text-gray-500" />
-                          <span className="text-sm">{label}</span>
+                          <span className="text-sm">{account.name}</span>
                         </div>
                         <span className="font-medium">{formatCurrency(amount)}</span>
                       </div>
@@ -501,8 +459,8 @@ export default function ReserveFunds() {
                     <TableCell className="font-medium">{index + 1}</TableCell>
                     <TableCell>{expenditure.name}</TableCell>
                     <TableCell>
-                      <Badge className={accountTypeColors[expenditure.sourceType] || "bg-gray-100 text-gray-800"}>
-                        {accountTypeLabels[expenditure.sourceType] || expenditure.sourceType}
+                      <Badge className={getAccountColor(expenditure.sourceType)}>
+                        {expenditure.sourceType}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right font-medium">
