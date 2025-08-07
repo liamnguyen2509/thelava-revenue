@@ -2,6 +2,14 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -68,6 +76,9 @@ export default function ReserveFunds() {
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Generate years array like in cash flow page
+  const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
 
   const { data: allocations } = useQuery<ReserveAllocation[]>({
     queryKey: ["/api/reserve-allocations", selectedYear],
@@ -184,21 +195,37 @@ export default function ReserveFunds() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Quỹ dự trữ</h1>
           <p className="text-gray-600">Quản lý phân bổ và chi tiêu quỹ dự trữ cho tiệm</p>
         </div>
-        <div className="flex space-x-2">
-          <select 
-            className="text-sm border rounded px-3 py-2"
-            value={selectedYear}
-            onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <Label htmlFor="year">Năm:</Label>
+            <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {years.map((year) => (
+                  <SelectItem key={year} value={year.toString()}>
+                    {year}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button 
+            onClick={() => {
+              setSelectedExpenditure(null);
+              setIsExpenditureModalOpen(true);
+            }}
+            className="bg-tea-brown hover:bg-tea-brown/90"
           >
-            <option value={2025}>2025</option>
-            <option value={2024}>2024</option>
-            <option value={2023}>2023</option>
-          </select>
+            <Plus className="w-4 h-4 mr-2" />
+            Thêm khoản chi
+          </Button>
         </div>
       </div>
 
