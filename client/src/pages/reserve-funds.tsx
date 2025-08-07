@@ -413,7 +413,16 @@ export default function ReserveFunds() {
               <p className="text-sm text-gray-600">Tỷ lệ chi tiêu theo loại quỹ</p>
             </CardHeader>
             <CardContent>
-              <ExpenditurePieChart data={expenditureSummary?.byAccount || {}} />
+              <ExpenditurePieChart data={(() => {
+                const filteredData: { [key: string]: number } = {};
+                filteredAllocationAccounts.forEach(account => {
+                  const amount = expenditureSummary?.byAccount?.[account.name];
+                  if (amount) {
+                    filteredData[account.name] = amount;
+                  }
+                });
+                return filteredData;
+              })()} />
             </CardContent>
           </Card>
         </div>

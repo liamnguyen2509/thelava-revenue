@@ -4,20 +4,13 @@ interface ExpenditurePieChartProps {
   data: { [key: string]: number };
 }
 
-const accountTypeLabels: { [key: string]: string } = {
-  reinvestment: "Tái đầu tư",
-  depreciation: "Khấu hao", 
-  risk_reserve: "Rủi ro",
-  staff_bonus: "Lương thưởng",
-};
-
-const colors = ['#10B981', '#F59E0B', '#EF4444', '#3B82F6'];
+const colors = ['#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#8B5CF6', '#F97316'];
 
 export default function ExpenditurePieChart({ data }: ExpenditurePieChartProps) {
   const chartData = Object.entries(data)
     .filter(([_, value]) => value > 0)
     .map(([key, value]) => ({
-      name: accountTypeLabels[key] || key,
+      name: key, // Use the actual account name directly
       value: value,
       key: key
     }));
