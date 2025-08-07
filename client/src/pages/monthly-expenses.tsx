@@ -61,7 +61,7 @@ export default function MonthlyExpenses() {
 
   // Fetch data
   const { data: expenses = [], isLoading } = useQuery<Expense[]>({
-    queryKey: ["/api/expenses", selectedYear, selectedMonth],
+    queryKey: [`/api/expenses/${selectedYear}/${selectedMonth}`],
   });
 
   const { data: systemSettings = [] } = useQuery<SystemSetting[]>({
@@ -147,7 +147,7 @@ export default function MonthlyExpenses() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/expenses", selectedYear, selectedMonth] });
+      queryClient.invalidateQueries({ queryKey: [`/api/expenses/${selectedYear}/${selectedMonth}`] });
       toast({ title: "Thành công", description: "Chi phí đã được thêm thành công" });
       setIsModalOpen(false);
       resetForm();
@@ -173,7 +173,7 @@ export default function MonthlyExpenses() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/expenses", selectedYear, selectedMonth] });
+      queryClient.invalidateQueries({ queryKey: [`/api/expenses/${selectedYear}/${selectedMonth}`] });
       toast({ title: "Thành công", description: "Chi phí đã được cập nhật thành công" });
       setIsModalOpen(false);
       setEditingExpense(null);
@@ -193,7 +193,7 @@ export default function MonthlyExpenses() {
       await apiRequest(`/api/expenses/${id}`, "DELETE");
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/expenses", selectedYear, selectedMonth] });
+      queryClient.invalidateQueries({ queryKey: [`/api/expenses/${selectedYear}/${selectedMonth}`] });
       toast({ title: "Thành công", description: "Chi phí đã được xóa thành công" });
     },
     onError: (error: any) => {
@@ -210,7 +210,7 @@ export default function MonthlyExpenses() {
       await Promise.all(ids.map(id => apiRequest(`/api/expenses/${id}`, "DELETE")));
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/expenses", selectedYear, selectedMonth] });
+      queryClient.invalidateQueries({ queryKey: [`/api/expenses/${selectedYear}/${selectedMonth}`] });
       toast({ title: "Thành công", description: "Các chi phí đã được xóa thành công" });
       setSelectedExpenses([]);
     },
