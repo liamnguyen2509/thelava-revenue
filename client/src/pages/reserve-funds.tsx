@@ -70,6 +70,8 @@ export default function ReserveFunds() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [expenditureToDelete, setExpenditureToDelete] = useState<string | null>(null);
   const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -159,6 +161,22 @@ export default function ReserveFunds() {
     const index = allocationAccounts.findIndex(acc => acc.name === accountName);
     return index >= 0 ? getAccountTypeColor(index) : "bg-gray-100 text-gray-800";
   };
+
+  // Filter accounts - exclude "Cổ tức" and "Marketing" 
+  const filteredAllocationAccounts = allocationAccounts.filter(acc => 
+    acc.name !== "Cổ tức" && acc.name !== "Marketing"
+  );
+
+  // Sort expenditures by date (newest first) and paginate
+  const sortedExpenditures = expenditures?.sort((a, b) => 
+    new Date(b.expenditureDate).getTime() - new Date(a.expenditureDate).getTime()
+  ) || [];
+  
+  const totalPages = Math.ceil(sortedExpenditures.length / itemsPerPage);
+  const paginatedExpenditures = sortedExpenditures.slice(
+    (currentPage - 1) * itemsPerPage, 
+    currentPage * itemsPerPage
+  );
 
   const formatMonth = (month: number) => {
     return `Tháng ${month}`;
@@ -253,9 +271,9 @@ export default function ReserveFunds() {
         </div>
       </div>
 
-      {/* Dynamic Summary Cards based on allocation accounts */}
+      {/* Dynamic Summary Cards based on filtered allocation accounts */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        {allocationAccounts.slice(0, 4).map((account, index) => {
+        {filteredAllocationAccounts.slice(0, 4).map((account, index) => {
           const colorStyles = [
             { border: 'border-green-200', bg: 'bg-gradient-to-br from-green-50 to-green-100', text: 'text-green-900', icon: 'text-green-600' },
             { border: 'border-yellow-200', bg: 'bg-gradient-to-br from-yellow-50 to-yellow-100', text: 'text-yellow-900', icon: 'text-yellow-600' },
@@ -315,7 +333,7 @@ export default function ReserveFunds() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Tháng</TableHead>
-                    {allocationAccounts.slice(0, 4).map((account) => (
+                    {filteredAllocationAccounts.slice(0, 4).map((account) => (
                       <TableHead key={account.id} className="text-right">{account.name}</TableHead>
                     ))}
                     <TableHead className="text-right">Tổng</TableHead>
@@ -324,12 +342,14 @@ export default function ReserveFunds() {
                 <TableBody>
                   {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
                     const monthData = expenditureSummary?.monthlyExpenditure?.[month] || {};
-                    const monthTotal = Object.values(monthData).reduce((sum, val) => sum + val, 0);
+                    // Only calculate total for filtered accounts (exclude "Cổ tức" and "Marketing")
+                    const monthTotal = filteredAllocationAccounts.reduce((sum, account) => 
+                      sum + (monthData[account.name] || 0), 0);
                     
                     return (
                       <TableRow key={month}>
                         <TableCell className="font-medium">Tháng {month}</TableCell>
-                        {allocationAccounts.slice(0, 4).map((account) => (
+                        {filteredAllocationAccounts.slice(0, 4).map((account) => (
                           <TableCell key={account.id} className="text-right">
                             {monthData[account.name] ? formatCurrency(monthData[account.name]) : "0"}
                           </TableCell>
@@ -357,13 +377,17 @@ export default function ReserveFunds() {
               <div className="space-y-4">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-red-600">
-                    {expenditureSummary?.totalExpended ? formatCurrency(expenditureSummary.totalExpended) : "0"}
+                    {(() => {
+                      const filteredTotal = filteredAllocationAccounts.reduce((sum, account) => 
+                        sum + (expenditureSummary?.byAccount?.[account.name] || 0), 0);
+                      return filteredTotal > 0 ? formatCurrency(filteredTotal) : "0";
+                    })()}
                   </div>
                   <p className="text-sm text-gray-600">Tổng chi trong năm</p>
                 </div>
                 
                 <div className="space-y-3">
-                  {allocationAccounts.map((account, index) => {
+                  {filteredAllocationAccounts.map((account, index) => {
                     const amount = expenditureSummary?.byAccount?.[account.name] || 0;
                     const Icon = getAccountTypeIcon(index);
                     
@@ -448,7 +472,7 @@ export default function ReserveFunds() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {expenditures.slice(0, 10).map((expenditure: ReserveExpenditure, index: number) => (
+                {paginatedExpenditures.map((expenditure: ReserveExpenditure, index: number) => (
                   <TableRow key={expenditure.id}>
                     <TableCell>
                       <Checkbox
@@ -456,7 +480,7 @@ export default function ReserveFunds() {
                         onCheckedChange={() => toggleSelectExpenditure(expenditure.id)}
                       />
                     </TableCell>
-                    <TableCell className="font-medium">{index + 1}</TableCell>
+                    <TableCell className="font-medium">{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
                     <TableCell>{expenditure.name}</TableCell>
                     <TableCell>
                       <Badge className={getAccountColor(expenditure.sourceType)}>
@@ -512,12 +536,43 @@ export default function ReserveFunds() {
             </div>
           )}
           
-          {/* Pagination would go here if needed */}
-          {expenditures && expenditures.length > 10 && (
-            <div className="flex justify-center mt-4">
-              <p className="text-sm text-gray-500">
-                Hiển thị 10 trong tổng số {expenditures.length} khoản chi
-              </p>
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-6 py-4 border-t">
+              <div className="text-sm text-gray-700">
+                Hiển thị {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, sortedExpenditures.length)} của {sortedExpenditures.length} kết quả
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Trước
+                </Button>
+                <div className="flex items-center space-x-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(page)}
+                      className="w-8 h-8 p-0"
+                    >
+                      {page}
+                    </Button>
+                  ))}
+                </div>
+                <Button
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Sau
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>
