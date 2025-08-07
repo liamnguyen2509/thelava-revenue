@@ -122,7 +122,7 @@ export default function ReserveFunds() {
   });
 
   const formatCurrency = (amount: string | number) => {
-    return parseFloat(amount.toString()).toLocaleString('vi-VN');
+    return Math.round(parseFloat(amount.toString())).toLocaleString('vi-VN').replace(/,/g, '.');
   };
 
   const formatMonth = (month: number) => {

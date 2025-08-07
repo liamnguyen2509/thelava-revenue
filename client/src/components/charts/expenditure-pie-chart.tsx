@@ -31,7 +31,7 @@ export default function ExpenditurePieChart({ data }: ExpenditurePieChartProps) 
   }
 
   const formatCurrency = (value: number) => {
-    return `${value.toLocaleString('vi-VN')} VNĐ`;
+    return `${Math.round(value).toLocaleString('vi-VN').replace(/,/g, '.')} VNĐ`;
   };
 
   const renderCustomizedLabel = ({ percent }: any) => {

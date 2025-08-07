@@ -83,13 +83,18 @@ export default function ReserveExpenditureModal({
     return dateString;
   };
 
+  // Helper function to format amount with dots
+  const formatAmount = (amount: number) => {
+    return Math.round(amount).toLocaleString('vi-VN').replace(/,/g, '.');
+  };
+
   // Reset form when expenditure prop changes
   React.useEffect(() => {
     if (expenditure) {
       form.reset({
         name: expenditure.name,
         sourceType: expenditure.sourceType,
-        amount: Math.round(expenditure.amount).toString(), // Remove decimal places
+        amount: formatAmount(expenditure.amount), // Format with dots
         expenditureDate: formatDateForDisplay(expenditure.expenditureDate),
         notes: expenditure.notes || "",
       });
@@ -153,9 +158,10 @@ export default function ReserveExpenditureModal({
   });
 
   const onSubmit = (data: InsertReserveExpenditure) => {
-    // Convert date from DD/MM/YYYY to YYYY-MM-DD format before submitting
+    // Convert date from DD/MM/YYYY to YYYY-MM-DD format and amount to number
     const formattedData = {
       ...data,
+      amount: data.amount.replace(/\./g, ''), // Remove dots for submission
       expenditureDate: formatDateForInput(data.expenditureDate),
     };
     
@@ -229,10 +235,22 @@ export default function ReserveExpenditureModal({
                   <FormLabel>Tiền chi (VNĐ)</FormLabel>
                   <FormControl>
                     <Input
-                      type="number"
-                      step="0.01"
                       placeholder="0"
                       {...field}
+                      onChange={(e) => {
+                        // Remove all non-digits
+                        let value = e.target.value.replace(/\D/g, '');
+                        // Format with dots as thousands separators
+                        if (value) {
+                          value = parseInt(value).toLocaleString('vi-VN').replace(/,/g, '.');
+                        }
+                        field.onChange(value);
+                      }}
+                      onBlur={(e) => {
+                        // Convert formatted value back to number for form validation
+                        const numericValue = e.target.value.replace(/\./g, '');
+                        field.onChange(numericValue);
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
