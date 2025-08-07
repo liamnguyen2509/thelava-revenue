@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import ReserveAllocationModal from "@/components/modals/reserve-allocation-modal";
 import ReserveExpenditureModal from "@/components/modals/reserve-expenditure-modal";
+import ConfirmDeleteModal from "@/components/modals/confirm-delete-modal";
+import ExpenditurePieChart from "@/components/charts/expenditure-pie-chart";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { ReserveAllocation, AllocationAccount, ReserveExpenditure } from "@shared/schema";
@@ -60,6 +62,9 @@ export default function ReserveFunds() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedExpenditure, setSelectedExpenditure] = useState<ReserveExpenditure | null>(null);
   const [selectedExpenditures, setSelectedExpenditures] = useState<string[]>([]);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [expenditureToDelete, setExpenditureToDelete] = useState<string | null>(null);
+  const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -136,12 +141,28 @@ export default function ReserveFunds() {
   };
 
   const handleDeleteExpenditure = (id: string) => {
-    deleteExpenditureMutation.mutate(id);
+    setExpenditureToDelete(id);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (expenditureToDelete) {
+      deleteExpenditureMutation.mutate(expenditureToDelete);
+      setDeleteConfirmOpen(false);
+      setExpenditureToDelete(null);
+    }
   };
 
   const handleBulkDelete = () => {
     if (selectedExpenditures.length > 0) {
+      setBulkDeleteConfirmOpen(true);
+    }
+  };
+
+  const handleConfirmBulkDelete = () => {
+    if (selectedExpenditures.length > 0) {
       deleteMultipleExpendituresMutation.mutate(selectedExpenditures);
+      setBulkDeleteConfirmOpen(false);
     }
   };
 
@@ -318,7 +339,7 @@ export default function ReserveFunds() {
         </div>
 
         {/* Right Panel - Total Expenditure Summary (1/3 width) */}
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-1 space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Tổng chi quỹ</CardTitle>
@@ -350,6 +371,17 @@ export default function ReserveFunds() {
                   })}
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Expenditure Pie Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Biểu đồ chi tiêu</CardTitle>
+              <p className="text-sm text-gray-600">Tỷ lệ chi tiêu theo loại quỹ</p>
+            </CardHeader>
+            <CardContent>
+              <ExpenditurePieChart data={expenditureSummary?.byAccount || {}} />
             </CardContent>
           </Card>
         </div>
@@ -498,6 +530,25 @@ export default function ReserveFunds() {
           }
         }}
         expenditure={selectedExpenditure}
+      />
+
+      {/* Delete Confirmation Modals */}
+      <ConfirmDeleteModal
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        onConfirm={handleConfirmDelete}
+        title="Xác nhận xóa khoản chi"
+        description="Bạn có chắc chắn muốn xóa khoản chi này không? Hành động này không thể hoàn tác."
+        isLoading={deleteExpenditureMutation.isPending}
+      />
+
+      <ConfirmDeleteModal
+        open={bulkDeleteConfirmOpen}
+        onOpenChange={setBulkDeleteConfirmOpen}
+        onConfirm={handleConfirmBulkDelete}
+        title="Xác nhận xóa nhiều khoản chi"
+        description={`Bạn có chắc chắn muốn xóa ${selectedExpenditures.length} khoản chi đã chọn không? Hành động này không thể hoàn tác.`}
+        isLoading={deleteMultipleExpendituresMutation.isPending}
       />
     </div>
   );
