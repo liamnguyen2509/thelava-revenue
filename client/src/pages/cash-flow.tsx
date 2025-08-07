@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { ExpenseModal } from "@/components/modals/expense-modal";
 import { Calendar, Plus } from "lucide-react";
+import type { SystemSetting, ExpenseCategory } from "@shared/schema";
 
 export default function CashFlow() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -26,6 +27,16 @@ export default function CashFlow() {
     queryKey: ["/api/expenses", selectedYear],
   });
 
+  // Fetch system settings for currency
+  const { data: systemSettings = [] } = useQuery<SystemSetting[]>({
+    queryKey: ["/api/settings/system"],
+  });
+
+  // Fetch expense categories from settings
+  const { data: expenseCategories = [] } = useQuery<ExpenseCategory[]>({
+    queryKey: ["/api/settings/expense-categories"],
+  });
+
   const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
   const months = [
     "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6",
@@ -33,11 +44,9 @@ export default function CashFlow() {
   ];
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-      minimumFractionDigits: 0,
-    }).format(amount);
+    const currencySetting = systemSettings.find(s => s.key === "currency");
+    const currency = currencySetting?.value || "VNĐ";
+    return Math.round(amount).toLocaleString('vi-VN').replace(/,/g, '.') + " " + currency;
   };
 
   const getDaysInMonth = (month: number, year: number) => {
@@ -45,14 +54,14 @@ export default function CashFlow() {
   };
 
   const calculateExpensesByCategory = (monthIndex: number, category: string) => {
-    if (!expenses) return 0;
+    if (!expenses || !Array.isArray(expenses)) return 0;
     return expenses
       .filter((expense: any) => expense.month === monthIndex + 1 && expense.category === category)
       .reduce((sum: number, expense: any) => sum + parseFloat(expense.amount), 0);
   };
 
   const calculateTotalExpenses = (monthIndex: number) => {
-    if (!expenses) return 0;
+    if (!expenses || !Array.isArray(expenses)) return 0;
     return expenses
       .filter((expense: any) => expense.month === monthIndex + 1)
       .reduce((sum: number, expense: any) => sum + parseFloat(expense.amount), 0);
@@ -131,7 +140,7 @@ export default function CashFlow() {
               </thead>
               <tbody>
                 {months.map((month, index) => {
-                  const monthRevenue = revenues?.find((r: any) => r.month === index + 1)?.amount || 0;
+                  const monthRevenue = revenues && Array.isArray(revenues) ? revenues.find((r: any) => r.month === index + 1)?.amount || 0 : 0;
                   const staffSalary = calculateExpensesByCategory(index, "staff_salary");
                   const ingredients = calculateExpensesByCategory(index, "ingredients");
                   const fixedExpenses = calculateExpensesByCategory(index, "fixed");
@@ -220,7 +229,7 @@ export default function CashFlow() {
               </thead>
               <tbody>
                 {months.map((month, index) => {
-                  const monthRevenue = revenues?.find((r: any) => r.month === index + 1)?.amount || 0;
+                  const monthRevenue = revenues && Array.isArray(revenues) ? revenues.find((r: any) => r.month === index + 1)?.amount || 0 : 0;
                   const totalExpenses = calculateTotalExpenses(index);
                   const netProfit = monthRevenue - totalExpenses;
 

@@ -21,19 +21,12 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { insertExpenseSchema, type InsertExpense } from "@shared/schema";
+import { insertExpenseSchema, type InsertExpense, type ExpenseCategory, type SystemSetting } from "@shared/schema";
 
 interface ExpenseModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
-
-const expenseCategories = [
-  { value: "staff_salary", label: "Lương nhân viên" },
-  { value: "ingredients", label: "Nguyên liệu" },
-  { value: "fixed", label: "Chi phí cố định" },
-  { value: "additional", label: "Chi phí bổ sung" },
-];
 
 const expenseStatuses = [
   { value: "spent", label: "Đã chi" },
@@ -44,11 +37,26 @@ export function ExpenseModal({ isOpen, onClose }: ExpenseModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Fetch expense categories from settings
+  const { data: expenseCategories = [] } = useQuery<ExpenseCategory[]>({
+    queryKey: ["/api/settings/expense-categories"],
+  });
+
+  // Fetch system settings for currency
+  const { data: systemSettings = [] } = useQuery<SystemSetting[]>({
+    queryKey: ["/api/settings/system"],
+  });
+
+  const getCurrency = () => {
+    const currencySetting = systemSettings.find(s => s.key === "currency");
+    return currencySetting?.value || "VNĐ";
+  };
+
   const form = useForm<InsertExpense>({
     resolver: zodResolver(insertExpenseSchema),
     defaultValues: {
       name: "",
-      category: "staff_salary",
+      category: "",
       amount: "0",
       expenseDate: new Date().toISOString().split('T')[0] as any,
       status: "spent",
@@ -120,8 +128,8 @@ export function ExpenseModal({ isOpen, onClose }: ExpenseModalProps) {
               </SelectTrigger>
               <SelectContent>
                 {expenseCategories.map((category) => (
-                  <SelectItem key={category.value} value={category.value}>
-                    {category.label}
+                  <SelectItem key={category.id} value={category.name}>
+                    {category.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -132,7 +140,7 @@ export function ExpenseModal({ isOpen, onClose }: ExpenseModalProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="amount">Số tiền</Label>
+            <Label htmlFor="amount">Số tiền ({getCurrency()})</Label>
             <Input
               id="amount"
               type="number"
