@@ -205,10 +205,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/revenues", requireAuth, async (req, res) => {
     try {
+      console.log('Revenue POST request body:', req.body);
       const revenueData = insertRevenueSchema.parse(req.body);
+      console.log('Parsed revenue data:', revenueData);
       const revenue = await storage.upsertRevenue(revenueData);
       res.json(revenue);
     } catch (error) {
+      console.error('Revenue validation error:', error);
       res.status(400).json({ message: "Dữ liệu doanh thu không hợp lệ" });
     }
   });

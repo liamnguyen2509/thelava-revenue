@@ -116,7 +116,7 @@ export default function CashFlow() {
 
   // Mutation for updating revenue
   const updateRevenueMutation = useMutation({
-    mutationFn: async (data: { month: number; year: number; amount: number }) => {
+    mutationFn: async (data: { month: number; year: number; amount: string }) => {
       const res = await apiRequest("/api/revenues", "POST", data);
       return res.json();
     },
@@ -158,10 +158,11 @@ export default function CashFlow() {
   };
 
   const handleRevenueUpdate = (month: number, newAmount: number) => {
+    // Convert amount to string to match decimal schema expectations
     updateRevenueMutation.mutate({
       month: month,
       year: selectedYear,
-      amount: newAmount,
+      amount: newAmount.toString(),
     });
   };
 
