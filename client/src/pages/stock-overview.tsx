@@ -200,17 +200,18 @@ export default function StockOverview() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex justify-between items-start">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Tổng quan kho hàng</h1>
-          <p className="text-gray-600">Theo dõi tình trạng kho hàng tổng thể</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Tổng quan kho hàng</h1>
+          <p className="text-gray-600 text-sm sm:text-base">Theo dõi tình trạng kho hàng tổng thể</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           {selectedItems.length > 0 && (
             <Button 
               onClick={handleBulkDelete}
               variant="destructive"
               disabled={bulkDeleteMutation.isPending}
+              className="w-full sm:w-auto"
             >
               <Trash2 className="w-4 h-4 mr-2" />
               Xóa {selectedItems.length} mục
@@ -221,7 +222,7 @@ export default function StockOverview() {
               setEditingItem(null);
               setIsStockItemModalOpen(true);
             }}
-            className="bg-tea-brown hover:bg-tea-brown/90"
+            className="bg-tea-brown hover:bg-tea-brown/90 w-full sm:w-auto"
           >
             <Plus className="w-4 h-4 mr-2" />
             Thêm hàng hóa
@@ -290,87 +291,112 @@ export default function StockOverview() {
         </CardHeader>
         <CardContent>
           {stockItems && stockItems.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-12">
-                    <Checkbox 
-                      checked={selectedItems.length === stockItems?.length && stockItems?.length > 0}
-                      onCheckedChange={toggleSelectAll}
-                    />
-                  </TableHead>
-                  <TableHead>Tên hàng hóa</TableHead>
-                  <TableHead>Đơn vị</TableHead>
-                  <TableHead className="text-right">Giá thành</TableHead>
-                  <TableHead className="text-right">Nhập kho</TableHead>
-                  <TableHead className="text-right">Xuất kho</TableHead>
-                  <TableHead className="text-right">Tồn kho</TableHead>
-                  <TableHead>Trạng thái</TableHead>
-                  <TableHead className="text-right">Thao tác</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {stockItems.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell>
+            <div className="mobile-table-container">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-3 px-2 sm:px-4 sticky left-0 bg-white z-10 w-12">
                       <Checkbox 
-                        checked={selectedItems.includes(item.id)}
-                        onCheckedChange={() => toggleSelectItem(item.id)}
+                        checked={selectedItems.length === stockItems?.length && stockItems?.length > 0}
+                        onCheckedChange={toggleSelectAll}
                       />
-                    </TableCell>
-                    <TableCell className="font-medium">{item.name}</TableCell>
-                    <TableCell>{item.unit}</TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        className="h-auto p-1 text-right hover:bg-blue-50 hover:text-blue-600"
-                        onClick={() => handleViewPriceHistory(item)}
-                      >
-                        <div className="flex items-center gap-1">
-                          <span className="font-medium">
-                            {formatMoney(parseFloat(item.unitPrice || '0'))}
-                          </span>
-                          <History className="h-3 w-3 opacity-60" />
+                    </th>
+                    <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4">Tên hàng hóa</th>
+                    <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden sm:table-cell">Đơn vị</th>
+                    <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4">Giá thành</th>
+                    <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden md:table-cell">Nhập kho</th>
+                    <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden md:table-cell">Xuất kho</th>
+                    <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4">Tồn kho</th>
+                    <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden lg:table-cell">Trạng thái</th>
+                    <th className="text-center text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {stockItems.map((item) => (
+                    <tr key={item.id} className="border-b border-gray-50 hover:bg-gray-50">
+                      <td className="py-4 px-2 sm:px-4 sticky left-0 bg-white">
+                        <Checkbox 
+                          checked={selectedItems.includes(item.id)}
+                          onCheckedChange={() => toggleSelectItem(item.id)}
+                        />
+                      </td>
+                      <td className="py-4 px-2 sm:px-4 font-medium text-gray-900">
+                        <div className="truncate max-w-[120px] sm:max-w-none" title={item.name}>
+                          {item.name}
                         </div>
-                      </Button>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <span className="text-green-600 font-medium">
-                        {(item.totalIn || 0).toLocaleString('vi-VN')}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <span className="text-red-600 font-medium">
-                        {(item.totalOut || 0).toLocaleString('vi-VN')}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {parseFloat(item.currentStock).toLocaleString('vi-VN')}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(item)}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex gap-2 justify-end">
+                        <div className="sm:hidden text-xs text-gray-500 mt-1">
+                          {item.unit}
+                        </div>
+                        <div className="lg:hidden text-xs mt-1">
+                          {getStatusBadge(item)}
+                        </div>
+                      </td>
+                      <td className="py-4 px-2 sm:px-4 text-sm text-gray-600 hidden sm:table-cell">
+                        {item.unit}
+                      </td>
+                      <td className="py-4 px-2 sm:px-4 text-right">
                         <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEdit(item)}
+                          variant="ghost"
+                          className="h-auto p-1 text-right hover:bg-blue-50 hover:text-blue-600"
+                          onClick={() => handleViewPriceHistory(item)}
                         >
-                          <Edit className="h-4 w-4" />
+                          <div className="flex items-center gap-1">
+                            <span className="font-medium text-sm">
+                              {formatMoney(parseFloat(item.unitPrice || '0'))}
+                            </span>
+                            <History className="h-3 w-3 opacity-60" />
+                          </div>
                         </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleDelete(item.id)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                        <div className="md:hidden text-xs text-gray-500 mt-1">
+                          <div className="flex justify-between">
+                            <span className="text-green-600">Nhập: {(item.totalIn || 0).toLocaleString('vi-VN')}</span>
+                            <span className="text-red-600">Xuất: {(item.totalOut || 0).toLocaleString('vi-VN')}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-4 px-2 sm:px-4 text-right hidden md:table-cell">
+                        <span className="text-green-600 font-medium text-sm">
+                          {(item.totalIn || 0).toLocaleString('vi-VN')}
+                        </span>
+                      </td>
+                      <td className="py-4 px-2 sm:px-4 text-right hidden md:table-cell">
+                        <span className="text-red-600 font-medium text-sm">
+                          {(item.totalOut || 0).toLocaleString('vi-VN')}
+                        </span>
+                      </td>
+                      <td className="py-4 px-2 sm:px-4 text-right text-sm font-medium text-gray-900">
+                        <div className="truncate">
+                          {parseFloat(item.currentStock).toLocaleString('vi-VN')}
+                        </div>
+                      </td>
+                      <td className="py-4 px-2 sm:px-4 hidden lg:table-cell">
+                        {getStatusBadge(item)}
+                      </td>
+                      <td className="py-4 px-2 sm:px-4 text-center">
+                        <div className="flex gap-1 sm:gap-2 justify-center">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEdit(item)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleDelete(item.id)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           ) : (
             <div className="text-center py-8 text-gray-500">
               <Package className="mx-auto h-12 w-12 text-gray-300 mb-4" />

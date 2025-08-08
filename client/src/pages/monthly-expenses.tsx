@@ -388,8 +388,8 @@ export default function MonthlyExpenses() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-tea-brown">Chi phí hàng tháng</h1>
-        <p className="text-tea-brown/70 mt-2">Quản lý chi phí hàng tháng của tiệm</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-tea-brown">Chi phí hàng tháng</h1>
+        <p className="text-tea-brown/70 mt-2 text-sm sm:text-base">Quản lý chi phí hàng tháng của tiệm</p>
       </div>
 
       {/* Filters */}
@@ -513,23 +513,23 @@ export default function MonthlyExpenses() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
+          <div className="mobile-table-container">
             <table className="min-w-full">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-2">
+                  <th className="text-left py-3 px-2 sm:px-4 sticky left-0 bg-white z-10">
                     <Checkbox
                       checked={selectedExpenses.length === filteredExpenses.length && filteredExpenses.length > 0}
                       onCheckedChange={toggleSelectAll}
                     />
                   </th>
-                  <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3">STT</th>
-                  <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Khoản Chi</th>
-                  <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Loại chi</th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Số tiền</th>
-                  <th className="text-center text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Ngày chi</th>
-                  <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Ghi chú</th>
-                  <th className="text-center text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Thao tác</th>
+                  <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4">STT</th>
+                  <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4">Khoản Chi</th>
+                  <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden sm:table-cell">Loại chi</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4">Số tiền</th>
+                  <th className="text-center text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden md:table-cell">Ngày chi</th>
+                  <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden lg:table-cell">Ghi chú</th>
+                  <th className="text-center text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
@@ -542,32 +542,46 @@ export default function MonthlyExpenses() {
                 ) : (
                   filteredExpenses.map((expense: Expense, index: number) => (
                     <tr key={expense.id} className="border-b border-gray-50 hover:bg-gray-50">
-                      <td className="py-4 px-2">
+                      <td className="py-4 px-2 sm:px-4 sticky left-0 bg-white">
                         <Checkbox
                           checked={selectedExpenses.includes(expense.id)}
                           onCheckedChange={() => toggleSelectExpense(expense.id)}
                         />
                       </td>
-                      <td className="py-4 text-sm text-gray-900">{index + 1}</td>
-                      <td className="py-4 text-sm font-medium text-gray-900">{expense.name}</td>
-                      <td className="py-4 text-sm text-gray-600">
+                      <td className="py-4 px-2 sm:px-4 text-sm text-gray-900">{index + 1}</td>
+                      <td className="py-4 px-2 sm:px-4 text-sm font-medium text-gray-900">
+                        <div className="truncate max-w-[120px] sm:max-w-none" title={expense.name}>
+                          {expense.name}
+                        </div>
+                        <div className="sm:hidden text-xs text-gray-500 mt-1">
+                          {expense.category === 'staff_salary' ? 'Lương nhân viên' : 
+                           expense.category === 'ingredients' ? 'Nguyên liệu' :
+                           expense.category === 'fixed' ? 'Chi phí cố định' :
+                           expense.category === 'additional' ? 'Chi phí phát sinh' : 
+                           expense.category}
+                        </div>
+                      </td>
+                      <td className="py-4 px-2 sm:px-4 text-sm text-gray-600 hidden sm:table-cell">
                         {expense.category === 'staff_salary' ? 'Lương nhân viên' : 
                          expense.category === 'ingredients' ? 'Nguyên liệu' :
                          expense.category === 'fixed' ? 'Chi phí cố định' :
                          expense.category === 'additional' ? 'Chi phí phát sinh' : 
                          expense.category}
                       </td>
-                      <td className="py-4 text-sm text-gray-900 text-right font-medium">
-                        {formatCurrency(parseFloat(expense.amount))}
+                      <td className="py-4 px-2 sm:px-4 text-sm text-gray-900 text-right font-medium">
+                        <div className="truncate">{formatCurrency(parseFloat(expense.amount))}</div>
+                        <div className="md:hidden text-xs text-gray-500 mt-1">
+                          {formatDate(expense.expenseDate)}
+                        </div>
                       </td>
-                      <td className="py-4 text-sm text-gray-600 text-center">
+                      <td className="py-4 px-2 sm:px-4 text-sm text-gray-600 text-center hidden md:table-cell">
                         {formatDate(expense.expenseDate)}
                       </td>
-                      <td className="py-4 text-sm text-gray-600 max-w-xs truncate">
+                      <td className="py-4 px-2 sm:px-4 text-sm text-gray-600 max-w-xs truncate hidden lg:table-cell">
                         {expense.notes || "-"}
                       </td>
-                      <td className="py-4 text-center">
-                        <div className="flex justify-center gap-2">
+                      <td className="py-4 px-2 sm:px-4 text-center">
+                        <div className="flex justify-center gap-1 sm:gap-2">
                           <Button
                             variant="ghost"
                             size="sm"

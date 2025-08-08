@@ -341,14 +341,14 @@ export default function ReserveFunds() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Quỹ dự trữ</h1>
-          <p className="text-gray-600">Quản lý phân bổ và chi tiêu quỹ dự trữ cho tiệm</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Quỹ dự trữ</h1>
+          <p className="text-gray-600 text-sm sm:text-base">Quản lý quỹ dự trữ</p>
         </div>
-        <div className="flex items-center space-x-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
           <div className="flex items-center space-x-2">
-            <Label htmlFor="year">Năm:</Label>
+            <Label htmlFor="year" className="text-sm">Năm:</Label>
             <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
-              <SelectTrigger className="w-32">
+              <SelectTrigger className="w-28 sm:w-32">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -361,12 +361,12 @@ export default function ReserveFunds() {
             </Select>
           </div>
           <div className="flex items-center space-x-2">
-            <Label htmlFor="month">Tháng:</Label>
+            <Label htmlFor="month" className="text-sm">Tháng:</Label>
             <Select 
               value={selectedMonth?.toString() || "all"} 
               onValueChange={(value) => setSelectedMonth(value === "all" ? null : parseInt(value))}
             >
-              <SelectTrigger className="w-32">
+              <SelectTrigger className="w-28 sm:w-32">
                 <SelectValue placeholder="Tất cả" />
               </SelectTrigger>
               <SelectContent>
@@ -383,16 +383,16 @@ export default function ReserveFunds() {
               setSelectedExpenditure(null);
               setIsExpenditureModalOpen(true);
             }}
-            className="bg-tea-brown hover:bg-tea-brown/90"
+            className="bg-tea-brown hover:bg-tea-brown/90 w-full sm:w-auto"
           >
             <Plus className="w-4 h-4 mr-2" />
-            Thêm khoản chi
+            <span className="sm:inline">Thêm khoản chi</span>
           </Button>
         </div>
       </div>
 
       {/* Dynamic Summary Cards based on filtered allocation accounts */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {filteredAllocationAccounts.slice(0, 4).map((account, index) => {
           const colorStyles = [
             { border: 'border-green-200', bg: 'bg-gradient-to-br from-green-50 to-green-100', text: 'text-green-900', icon: 'text-green-600' },
@@ -461,16 +461,17 @@ export default function ReserveFunds() {
               </p>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Tháng</TableHead>
-                    {filteredAllocationAccounts.slice(0, 4).map((account) => (
-                      <TableHead key={account.id} className="text-right">{account.name}</TableHead>
-                    ))}
-                    <TableHead className="text-right">Tổng</TableHead>
-                  </TableRow>
-                </TableHeader>
+              <div className="mobile-table-container">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="sticky left-0 bg-white z-10 px-2 sm:px-4">Tháng</TableHead>
+                      {filteredAllocationAccounts.slice(0, 4).map((account, index) => (
+                        <TableHead key={account.id} className={`text-right px-2 sm:px-4 ${index >= 2 ? 'hidden lg:table-cell' : ''}`}>{account.name}</TableHead>
+                      ))}
+                      <TableHead className="text-right px-2 sm:px-4">Tổng</TableHead>
+                    </TableRow>
+                  </TableHeader>
                 <TableBody>
                   {selectedMonth !== null ? (
                     // Show only selected month
@@ -481,14 +482,14 @@ export default function ReserveFunds() {
                       
                       return (
                         <TableRow>
-                          <TableCell className="font-medium">Tháng {selectedMonth}</TableCell>
-                          {filteredAllocationAccounts.slice(0, 4).map((account) => (
-                            <TableCell key={account.id} className="text-right">
-                              {monthData[account.name] ? formatCurrency(monthData[account.name]) : "0"}
+                          <TableCell className="font-medium sticky left-0 bg-white px-2 sm:px-4">Tháng {selectedMonth}</TableCell>
+                          {filteredAllocationAccounts.slice(0, 4).map((account, index) => (
+                            <TableCell key={account.id} className={`text-right px-2 sm:px-4 ${index >= 2 ? 'hidden lg:table-cell' : ''}`}>
+                              <div className="truncate">{monthData[account.name] ? formatCurrency(monthData[account.name]) : "0"}</div>
                             </TableCell>
                           ))}
-                          <TableCell className="text-right font-semibold">
-                            {monthTotal > 0 ? formatCurrency(monthTotal) : "0"}
+                          <TableCell className="text-right font-semibold px-2 sm:px-4">
+                            <div className="truncate">{monthTotal > 0 ? formatCurrency(monthTotal) : "0"}</div>
                           </TableCell>
                         </TableRow>
                       );
@@ -503,21 +504,22 @@ export default function ReserveFunds() {
                       
                       return (
                         <TableRow key={month}>
-                          <TableCell className="font-medium">Tháng {month}</TableCell>
-                          {filteredAllocationAccounts.slice(0, 4).map((account) => (
-                            <TableCell key={account.id} className="text-right">
-                              {monthData[account.name] ? formatCurrency(monthData[account.name]) : "0"}
+                          <TableCell className="font-medium sticky left-0 bg-white px-2 sm:px-4">Tháng {month}</TableCell>
+                          {filteredAllocationAccounts.slice(0, 4).map((account, index) => (
+                            <TableCell key={account.id} className={`text-right px-2 sm:px-4 ${index >= 2 ? 'hidden lg:table-cell' : ''}`}>
+                              <div className="truncate">{monthData[account.name] ? formatCurrency(monthData[account.name]) : "0"}</div>
                             </TableCell>
                           ))}
-                          <TableCell className="text-right font-semibold">
-                            {monthTotal > 0 ? formatCurrency(monthTotal) : "0"}
+                          <TableCell className="text-right font-semibold px-2 sm:px-4">
+                            <div className="truncate">{monthTotal > 0 ? formatCurrency(monthTotal) : "0"}</div>
                           </TableCell>
                         </TableRow>
                       );
                     })
                   )}                
                 </TableBody>
-              </Table>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </div>

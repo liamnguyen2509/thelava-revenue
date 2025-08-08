@@ -356,17 +356,18 @@ export default function StockIn() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex justify-between items-start">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Nhập kho</h1>
-          <p className="text-gray-600">Quản lý việc nhập hàng vào kho</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Nhập kho</h1>
+          <p className="text-gray-600 text-sm sm:text-base">Quản lý việc nhập hàng vào kho</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           {selectedTransactions.length > 0 && (
             <Button 
               onClick={handleBulkDelete}
               variant="destructive"
               disabled={bulkDeleteMutation.isPending}
+              className="w-full sm:w-auto"
             >
               <Trash2 className="w-4 h-4 mr-2" />
               Xóa {selectedTransactions.length} mục
@@ -377,7 +378,7 @@ export default function StockIn() {
               setEditingTransaction(null);
               setIsTransactionModalOpen(true);
             }}
-            className="bg-tea-brown hover:bg-tea-brown/90"
+            className="bg-tea-brown hover:bg-tea-brown/90 w-full sm:w-auto"
           >
             <Plus className="w-4 h-4 mr-2" />
             Nhập hàng mới
@@ -449,142 +450,163 @@ export default function StockIn() {
           <CardTitle>Lịch sử nhập kho</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  placeholder="Tìm kiếm theo tên hàng hóa..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
+          <div className="space-y-4 mb-6">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                placeholder="Tìm kiếm theo tên hàng hóa..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
             </div>
             
-            <div className="flex gap-2">
-              <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Chọn năm" />
-                </SelectTrigger>
-                <SelectContent>
-                  {yearOptions.map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex flex-1 gap-2">
+                <Select value={selectedYear} onValueChange={setSelectedYear}>
+                  <SelectTrigger className="flex-1 sm:w-[140px]">
+                    <SelectValue placeholder="Chọn năm" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {yearOptions.map((year) => (
+                      <SelectItem key={year} value={year.toString()}>
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                  <SelectTrigger className="flex-1 sm:w-[140px]">
+                    <SelectValue placeholder="Chọn tháng" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tất cả tháng</SelectItem>
+                    {monthOptions.map((month) => (
+                      <SelectItem key={month.value} value={month.value.toString()}>
+                        {month.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               
-              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Chọn tháng" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tất cả tháng</SelectItem>
-                  {monthOptions.map((month) => (
-                    <SelectItem key={month.value} value={month.value.toString()}>
-                      {month.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              <Button
-                variant="outline"
-                onClick={handleExportToExcel}
-                disabled={filteredTransactions.length === 0}
-              >
-                <FileSpreadsheet className="w-4 h-4 mr-2" />
-                Xuất Excel
-              </Button>
-              
-              <Button
-                variant="outline"
-                onClick={handlePrint}
-                disabled={selectedTransactions.length === 0}
-              >
-                <Printer className="w-4 h-4 mr-2" />
-                In Phiếu Nhập
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={handleExportToExcel}
+                  disabled={filteredTransactions.length === 0}
+                  className="flex-1 sm:flex-none"
+                >
+                  <FileSpreadsheet className="w-4 h-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Xuất </span>Excel
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  onClick={handlePrint}
+                  disabled={selectedTransactions.length === 0}
+                  className="flex-1 sm:flex-none"
+                >
+                  <Printer className="w-4 h-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">In Phiếu </span>In
+                </Button>
+              </div>
             </div>
           </div>
 
           {/* Transactions Table */}
           {filteredTransactions.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-12">
-                    <Checkbox 
-                      checked={selectedTransactions.length === filteredTransactions.length && filteredTransactions.length > 0}
-                      onCheckedChange={toggleSelectAll}
-                    />
-                  </TableHead>
-                  <TableHead>Ngày nhập</TableHead>
-                  <TableHead>Hàng hóa</TableHead>
-                  <TableHead className="text-right">Số lượng</TableHead>
-                  <TableHead className="text-right">Giá đơn vị</TableHead>
-                  <TableHead className="text-right">Tổng tiền</TableHead>
-                  <TableHead>Ghi chú</TableHead>
-                  <TableHead className="text-right">Thao tác</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredTransactions.map((transaction) => {
-                  const item = stockItems?.find(item => item.id === transaction.itemId);
-                  return (
-                    <TableRow key={transaction.id}>
-                      <TableCell>
-                        <Checkbox 
-                          checked={selectedTransactions.includes(transaction.id)}
-                          onCheckedChange={() => toggleSelectTransaction(transaction.id)}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        {formatDisplayDate(transaction.transactionDate)}
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {item?.name || 'Không rõ'}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {parseFloat(transaction.quantity).toLocaleString('vi-VN')} {item?.unit}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {transaction.unitPrice ? formatMoney(parseFloat(transaction.unitPrice)) : '-'}
-                      </TableCell>
-                      <TableCell className="text-right font-medium">
-                        {transaction.totalPrice ? formatMoney(parseFloat(transaction.totalPrice)) : '-'}
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm text-gray-600">
-                          {transaction.notes || '-'}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex gap-2 justify-end">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEdit(transaction)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleDelete(transaction.id)}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+            <div className="mobile-table-container">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-3 px-2 sm:px-4 sticky left-0 bg-white z-10 w-12">
+                      <Checkbox 
+                        checked={selectedTransactions.length === filteredTransactions.length && filteredTransactions.length > 0}
+                        onCheckedChange={toggleSelectAll}
+                      />
+                    </th>
+                    <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4">Ngày nhập</th>
+                    <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4">Hàng hóa</th>
+                    <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4">Số lượng</th>
+                    <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden md:table-cell">Giá đơn vị</th>
+                    <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4">Tổng tiền</th>
+                    <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden lg:table-cell">Ghi chú</th>
+                    <th className="text-center text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredTransactions.map((transaction) => {
+                    const item = stockItems?.find(item => item.id === transaction.itemId);
+                    return (
+                      <tr key={transaction.id} className="border-b border-gray-50 hover:bg-gray-50">
+                        <td className="py-4 px-2 sm:px-4 sticky left-0 bg-white">
+                          <Checkbox 
+                            checked={selectedTransactions.includes(transaction.id)}
+                            onCheckedChange={() => toggleSelectTransaction(transaction.id)}
+                          />
+                        </td>
+                        <td className="py-4 px-2 sm:px-4 text-sm text-gray-900">
+                          <div className="truncate">
+                            {formatDisplayDate(transaction.transactionDate)}
+                          </div>
+                        </td>
+                        <td className="py-4 px-2 sm:px-4 font-medium text-gray-900">
+                          <div className="truncate max-w-[120px] sm:max-w-none" title={item?.name || 'Không rõ'}>
+                            {item?.name || 'Không rõ'}
+                          </div>
+                          <div className="lg:hidden text-xs text-gray-500 mt-1 truncate" title={transaction.notes || '-'}>
+                            {transaction.notes || '-'}
+                          </div>
+                        </td>
+                        <td className="py-4 px-2 sm:px-4 text-right text-sm">
+                          <div className="font-medium">
+                            {parseFloat(transaction.quantity).toLocaleString('vi-VN')} {item?.unit}
+                          </div>
+                          <div className="md:hidden text-xs text-gray-500 mt-1">
+                            Đơn giá: {transaction.unitPrice ? formatMoney(parseFloat(transaction.unitPrice)) : '-'}
+                          </div>
+                        </td>
+                        <td className="py-4 px-2 sm:px-4 text-right text-sm hidden md:table-cell">
+                          {transaction.unitPrice ? formatMoney(parseFloat(transaction.unitPrice)) : '-'}
+                        </td>
+                        <td className="py-4 px-2 sm:px-4 text-right font-medium text-sm">
+                          <div className="truncate">
+                            {transaction.totalPrice ? formatMoney(parseFloat(transaction.totalPrice)) : '-'}
+                          </div>
+                        </td>
+                        <td className="py-4 px-2 sm:px-4 text-sm text-gray-600 hidden lg:table-cell">
+                          <div className="truncate max-w-xs" title={transaction.notes || '-'}>
+                            {transaction.notes || '-'}
+                          </div>
+                        </td>
+                        <td className="py-4 px-2 sm:px-4 text-center">
+                          <div className="flex gap-1 sm:gap-2 justify-center">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEdit(transaction)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleDelete(transaction.id)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           ) : (
             <div className="text-center py-8 text-gray-500">
               <Package className="mx-auto h-12 w-12 text-gray-300 mb-4" />

@@ -7,6 +7,7 @@ import CashFlowChart from "@/components/charts/cash-flow-chart";
 import RevenueChart from "@/components/charts/revenue-chart";
 import { ExpenseModal } from "@/components/modals/expense-modal";
 import RevenueModal from "@/components/modals/revenue-modal";
+import StockTransactionModal from "@/components/modals/stock-transaction-modal";
 import { useState } from "react";
 import { useFormattedData } from "@/hooks/useFormattedData";
 import {
@@ -31,6 +32,8 @@ interface ExpenditureSummaryData {
 export default function Dashboard() {
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [isRevenueModalOpen, setIsRevenueModalOpen] = useState(false);
+  const [isStockInModalOpen, setIsStockInModalOpen] = useState(false);
+  const [isStockOutModalOpen, setIsStockOutModalOpen] = useState(false);
   const { formatMoney } = useFormattedData();
   const currentYear = new Date().getFullYear();
 
@@ -296,16 +299,16 @@ export default function Dashboard() {
               <p className="text-sm text-gray-600">Theo dõi phân bổ lợi nhuận vào các quỹ</p>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
+              <div className="mobile-table-container">
                 <table className="min-w-full">
                   <thead>
                     <tr className="border-b border-gray-200">
-                      <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider pb-3">Tài khoản</th>
-                      <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider pb-3">Mô tả</th>
-                      <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider pb-3">%</th>
-                      <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider pb-3">Tổng cộng</th>
-                      <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider pb-3">Tổng chi</th>
-                      <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider pb-3">Còn lại</th>
+                      <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider pb-3 px-2 sm:px-0">Tài khoản</th>
+                      <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider pb-3 px-2 sm:px-0 hidden sm:table-cell">Mô tả</th>
+                      <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider pb-3 px-2 sm:px-0">%</th>
+                      <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider pb-3 px-2 sm:px-0">Tổng cộng</th>
+                      <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider pb-3 px-2 sm:px-0 hidden md:table-cell">Tổng chi</th>
+                      <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider pb-3 px-2 sm:px-0">Còn lại</th>
                     </tr>
                   </thead>
                   <tbody className="space-y-2">
@@ -317,26 +320,36 @@ export default function Dashboard() {
                         
                         return (
                           <tr key={account.id} className="border-b border-gray-50">
-                            <td className="py-3 text-sm font-medium text-gray-900">{account.name}</td>
-                            <td className="py-3 text-sm text-gray-600">{account.description}</td>
-                            <td className="py-3 text-sm text-gray-900 text-right">{account.percentage}%</td>
-                            <td className="py-3 text-sm font-medium text-gray-900 text-right">
-                              {formatMoney(totalAllocation)}
+                            <td className="py-3 px-2 sm:px-0 text-sm font-medium text-gray-900">
+                              <div className="truncate max-w-[100px] sm:max-w-none" title={account.name}>
+                                {account.name}
+                              </div>
+                              <div className="sm:hidden text-xs text-gray-500 mt-1 truncate" title={account.description}>
+                                {account.description}
+                              </div>
                             </td>
-                            <td className="py-3 text-sm font-medium text-red-600 text-right">
+                            <td className="py-3 px-2 sm:px-0 text-sm text-gray-600 hidden sm:table-cell">{account.description}</td>
+                            <td className="py-3 px-2 sm:px-0 text-sm text-gray-900 text-right">{account.percentage}%</td>
+                            <td className="py-3 px-2 sm:px-0 text-sm font-medium text-gray-900 text-right">
+                              <div className="truncate">{formatMoney(totalAllocation)}</div>
+                            </td>
+                            <td className="py-3 px-2 sm:px-0 text-sm font-medium text-red-600 text-right hidden md:table-cell">
                               {formatMoney(totalExpenditure)}
                             </td>
-                            <td className={`py-3 text-sm font-medium text-right ${
+                            <td className={`py-3 px-2 sm:px-0 text-sm font-medium text-right ${
                               remaining >= 0 ? 'text-green-600' : 'text-red-600'
                             }`}>
-                              {formatMoney(remaining)}
+                              <div className="truncate">{formatMoney(remaining)}</div>
+                              <div className="md:hidden text-xs mt-1">
+                                Chi: <span className="text-red-600">{formatMoney(totalExpenditure)}</span>
+                              </div>
                             </td>
                           </tr>
                         );
                       })
                     ) : (
                       <tr>
-                        <td colSpan={6} className="py-8 text-center text-gray-500">
+                        <td colSpan={6} className="py-8 text-center text-gray-500 text-sm px-4">
                           Chưa có tài khoản phân bổ nào. Vui lòng cấu hình trong mục Cài đặt.
                         </td>
                       </tr>
@@ -414,6 +427,7 @@ export default function Dashboard() {
                 <Button
                   variant="outline"
                   className="p-4 h-auto flex flex-col items-center space-y-2"
+                  onClick={() => setIsStockInModalOpen(true)}
                 >
                   <Package className="text-tea-brown w-6 h-6" />
                   <span className="text-sm font-medium">Nhập kho</span>
@@ -421,6 +435,7 @@ export default function Dashboard() {
                 <Button
                   variant="outline"
                   className="p-4 h-auto flex flex-col items-center space-y-2"
+                  onClick={() => setIsStockOutModalOpen(true)}
                 >
                   <TrendingDown className="text-tea-brown w-6 h-6" />
                   <span className="text-sm font-medium">Xuất kho</span>
@@ -446,6 +461,18 @@ export default function Dashboard() {
       <RevenueModal
         open={isRevenueModalOpen}
         onOpenChange={setIsRevenueModalOpen}
+      />
+      
+      <StockTransactionModal
+        open={isStockInModalOpen}
+        onOpenChange={setIsStockInModalOpen}
+        transactionType="in"
+      />
+      
+      <StockTransactionModal
+        open={isStockOutModalOpen}
+        onOpenChange={setIsStockOutModalOpen}
+        transactionType="out"
       />
     </div>
   );

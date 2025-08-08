@@ -142,16 +142,16 @@ export default function CashFlow() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Quản lý dòng tiền</h1>
-          <p className="text-gray-600">Theo dõi và quản lý dòng tiền theo năm</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Quản lý dòng tiền</h1>
+          <p className="text-gray-600 text-sm sm:text-base">Theo dõi và quản lý dòng tiền theo năm</p>
         </div>
-        <div className="flex items-center space-x-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
           <div className="flex items-center space-x-2">
-            <Label htmlFor="year">Năm:</Label>
+            <Label htmlFor="year" className="text-sm">Năm:</Label>
             <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
-              <SelectTrigger className="w-32">
+              <SelectTrigger className="w-28 sm:w-32">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -163,9 +163,9 @@ export default function CashFlow() {
               </SelectContent>
             </Select>
           </div>
-          <Button onClick={() => setIsExpenseModalOpen(true)} className="bg-tea-brown hover:bg-tea-brown/90">
+          <Button onClick={() => setIsExpenseModalOpen(true)} className="bg-tea-brown hover:bg-tea-brown/90 w-full sm:w-auto">
             <Plus className="w-4 h-4 mr-2" />
-            Thêm khoản chi
+            <span className="sm:inline">Thêm khoản chi</span>
           </Button>
         </div>
       </div>
@@ -177,23 +177,23 @@ export default function CashFlow() {
           <p className="text-sm text-gray-600">Bảng tổng quan doanh thu và chi phí theo tháng</p>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
+          <div className="mobile-table-container">
             <table className="min-w-full">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Tháng</th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Doanh thu</th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">DT TB Ngày</th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Lương NV</th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Tỷ lệ Lương</th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Nguyên liệu</th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Tỷ lệ NPL</th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Chi phí cố định</th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Tỷ lệ CP Cố định</th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">CP Phát sinh</th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Tỷ lệ CP Phát Sinh</th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Lợi nhuận ròng</th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Tỉ suất LN</th>
+                  <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-0 sticky left-0 bg-white z-10">Tháng</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-0">Doanh thu</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-0 hidden lg:table-cell">DT TB Ngày</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-0">Lương NV</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-0 hidden sm:table-cell">Tỷ lệ Lương</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-0">Nguyên liệu</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-0 hidden sm:table-cell">Tỷ lệ NPL</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-0 hidden md:table-cell">Chi phí cố định</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-0 hidden lg:table-cell">Tỷ lệ CP Cố định</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-0 hidden md:table-cell">CP Phát sinh</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-0 hidden lg:table-cell">Tỷ lệ CP Phát Sinh</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-0">Lợi nhuận ròng</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-0 hidden sm:table-cell">Tỉ suất LN</th>
                 </tr>
               </thead>
               <tbody>

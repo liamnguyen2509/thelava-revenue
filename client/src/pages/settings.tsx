@@ -357,33 +357,38 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       <div className="flex items-center gap-2">
-        <Settings className="h-6 w-6 text-tea-brown" />
-        <h1 className="text-2xl font-bold text-tea-brown">Cài đặt chung</h1>
+        <Settings className="h-5 w-5 sm:h-6 sm:w-6 text-tea-brown" />
+        <h1 className="text-xl sm:text-2xl font-bold text-tea-brown">Cài đặt chung</h1>
       </div>
 
       <Tabs defaultValue="general" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="general" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Chung
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1">
+          <TabsTrigger value="general" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Chung</span>
+            <span className="sm:hidden">Chung</span>
           </TabsTrigger>
-          <TabsTrigger value="allocation" className="flex items-center gap-2">
-            <PieChart className="h-4 w-4" />
-            Phân bổ quỹ
+          <TabsTrigger value="allocation" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <PieChart className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Phân bổ quỹ</span>
+            <span className="sm:hidden">Phân bổ</span>
           </TabsTrigger>
-          <TabsTrigger value="categories" className="flex items-center gap-2">
-            <Tags className="h-4 w-4" />
-            Danh mục chi phí
+          <TabsTrigger value="categories" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <Tags className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Danh mục chi phí</span>
+            <span className="sm:hidden">Chi phí</span>
           </TabsTrigger>
-          <TabsTrigger value="shareholders" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            Cổ đông
+          <TabsTrigger value="shareholders" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <Users className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Cổ đông</span>
+            <span className="sm:hidden">Cổ đông</span>
           </TabsTrigger>
-          <TabsTrigger value="branches" className="flex items-center gap-2">
-            <Building className="h-4 w-4" />
-            Chi nhánh
+          <TabsTrigger value="branches" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <Building className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Chi nhánh</span>
+            <span className="sm:hidden">Chi nhánh</span>
           </TabsTrigger>
         </TabsList>
 
@@ -396,7 +401,7 @@ export default function SettingsPage() {
                 Quản lý logo và đơn vị tiền tệ của hệ thống
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4 sm:space-y-6">
               <div className="space-y-2">
                 <Label>Logo hệ thống</Label>
                 <LogoUploader 
@@ -405,7 +410,7 @@ export default function SettingsPage() {
                     setSettingsForm(prev => ({ ...prev, logo: logoPath }));
                   }}
                 />
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   Logo sẽ được hiển thị ở trang đăng nhập và thanh điều hướng
                 </p>
               </div>
@@ -417,14 +422,14 @@ export default function SettingsPage() {
                   value={settingsForm.currency}
                   onChange={(e) => setSettingsForm(prev => ({ ...prev, currency: e.target.value }))}
                   placeholder="VNĐ"
-                  className="w-32"
+                  className="w-full sm:w-32"
                 />
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   Ký tự được hiển thị cùng với số tiền trong hệ thống
                 </p>
               </div>
 
-              <Button onClick={handleSaveSystemSettings} className="bg-tea-brown hover:bg-tea-brown/90">
+              <Button onClick={handleSaveSystemSettings} className="bg-tea-brown hover:bg-tea-brown/90 w-full sm:w-auto">
                 <Save className="h-4 w-4 mr-2" />
                 Lưu cài đặt
               </Button>
@@ -436,14 +441,14 @@ export default function SettingsPage() {
         <TabsContent value="allocation">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                  <CardTitle>Tài khoản phân bổ quỹ dự trù</CardTitle>
-                  <CardDescription>
+                  <CardTitle className="text-lg sm:text-xl">Tài khoản phân bổ quỹ dự trù</CardTitle>
+                  <CardDescription className="text-sm">
                     Quản lý các loại tài khoản và tỷ lệ phân bổ cho quỹ dự trù
                   </CardDescription>
                 </div>
-                <Button onClick={() => openAddModal("allocation")} className="bg-tea-brown hover:bg-tea-brown/90">
+                <Button onClick={() => openAddModal("allocation")} className="bg-tea-brown hover:bg-tea-brown/90 w-full sm:w-auto">
                   <Plus className="h-4 w-4 mr-2" />
                   Thêm tài khoản
                 </Button>
@@ -452,23 +457,24 @@ export default function SettingsPage() {
             <CardContent>
               <div className="space-y-4">
                 {allocationAccounts.map((account) => (
-                  <div key={account.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="space-y-1">
-                      <h3 className="font-medium">{account.name}</h3>
-                      <p className="text-sm text-muted-foreground">{account.description}</p>
-                      <p className="text-sm font-medium">Tỷ lệ: {account.percentage}%</p>
+                  <div key={account.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border rounded-lg">
+                    <div className="space-y-1 flex-1">
+                      <h3 className="font-medium text-sm sm:text-base">{account.name}</h3>
+                      <p className="text-xs sm:text-sm text-muted-foreground">{account.description}</p>
+                      <p className="text-xs sm:text-sm font-medium">Tỷ lệ: {account.percentage}%</p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 justify-end sm:justify-start">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => openEditModal("allocation", account)}
+                        className="h-8"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="outline" size="sm">
+                          <Button variant="outline" size="sm" className="h-8">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </AlertDialogTrigger>
@@ -502,14 +508,14 @@ export default function SettingsPage() {
         <TabsContent value="categories">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                  <CardTitle>Danh mục chi phí</CardTitle>
-                  <CardDescription>
+                  <CardTitle className="text-lg sm:text-xl">Danh mục chi phí</CardTitle>
+                  <CardDescription className="text-sm">
                     Quản lý các loại chi phí hàng tháng
                   </CardDescription>
                 </div>
-                <Button onClick={() => openAddModal("category")} className="bg-tea-brown hover:bg-tea-brown/90">
+                <Button onClick={() => openAddModal("category")} className="bg-tea-brown hover:bg-tea-brown/90 w-full sm:w-auto">
                   <Plus className="h-4 w-4 mr-2" />
                   Thêm danh mục
                 </Button>
@@ -518,22 +524,23 @@ export default function SettingsPage() {
             <CardContent>
               <div className="space-y-4">
                 {expenseCategories.map((category) => (
-                  <div key={category.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="space-y-1">
-                      <h3 className="font-medium">{category.name}</h3>
-                      <p className="text-sm text-muted-foreground">Mã: {category.code}</p>
+                  <div key={category.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border rounded-lg">
+                    <div className="space-y-1 flex-1">
+                      <h3 className="font-medium text-sm sm:text-base">{category.name}</h3>
+                      <p className="text-xs sm:text-sm text-muted-foreground">Mã: {category.code}</p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 justify-end sm:justify-start">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => openEditModal("category", category)}
+                        className="h-8"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="outline" size="sm">
+                          <Button variant="outline" size="sm" className="h-8">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </AlertDialogTrigger>
@@ -567,14 +574,14 @@ export default function SettingsPage() {
         <TabsContent value="shareholders">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                  <CardTitle>Cổ đông</CardTitle>
-                  <CardDescription>
+                  <CardTitle className="text-lg sm:text-xl">Cổ đông</CardTitle>
+                  <CardDescription className="text-sm">
                     Quản lý danh sách cổ đông và tỷ lệ chia cổ tức
                   </CardDescription>
                 </div>
-                <Button onClick={() => openAddModal("shareholder")} className="bg-tea-brown hover:bg-tea-brown/90">
+                <Button onClick={() => openAddModal("shareholder")} className="bg-tea-brown hover:bg-tea-brown/90 w-full sm:w-auto">
                   <Plus className="h-4 w-4 mr-2" />
                   Thêm cổ đông
                 </Button>
@@ -583,22 +590,23 @@ export default function SettingsPage() {
             <CardContent>
               <div className="space-y-4">
                 {shareholders.map((shareholder) => (
-                  <div key={shareholder.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="space-y-1">
-                      <h3 className="font-medium">{shareholder.name}</h3>
-                      <p className="text-sm text-muted-foreground">Tỷ lệ: {shareholder.percentage}%</p>
+                  <div key={shareholder.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border rounded-lg">
+                    <div className="space-y-1 flex-1">
+                      <h3 className="font-medium text-sm sm:text-base">{shareholder.name}</h3>
+                      <p className="text-xs sm:text-sm text-muted-foreground">Tỷ lệ: {shareholder.percentage}%</p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 justify-end sm:justify-start">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => openEditModal("shareholder", shareholder)}
+                        className="h-8"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="outline" size="sm">
+                          <Button variant="outline" size="sm" className="h-8">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </AlertDialogTrigger>
@@ -632,14 +640,14 @@ export default function SettingsPage() {
         <TabsContent value="branches">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                  <CardTitle>Chi nhánh</CardTitle>
-                  <CardDescription>
+                  <CardTitle className="text-lg sm:text-xl">Chi nhánh</CardTitle>
+                  <CardDescription className="text-sm">
                     Quản lý danh sách các chi nhánh của tiệm
                   </CardDescription>
                 </div>
-                <Button onClick={() => openAddModal("branch")} className="bg-tea-brown hover:bg-tea-brown/90">
+                <Button onClick={() => openAddModal("branch")} className="bg-tea-brown hover:bg-tea-brown/90 w-full sm:w-auto">
                   <Plus className="h-4 w-4 mr-2" />
                   Thêm chi nhánh
                 </Button>
@@ -648,25 +656,26 @@ export default function SettingsPage() {
             <CardContent>
               <div className="space-y-4">
                 {branches.map((branch) => (
-                  <div key={branch.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="space-y-1">
-                      <h3 className="font-medium">{branch.name}</h3>
-                      <p className="text-sm text-muted-foreground">{branch.address}</p>
+                  <div key={branch.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border rounded-lg">
+                    <div className="space-y-1 flex-1">
+                      <h3 className="font-medium text-sm sm:text-base">{branch.name}</h3>
+                      <p className="text-xs sm:text-sm text-muted-foreground">{branch.address}</p>
                       {branch.phone && (
-                        <p className="text-sm text-muted-foreground">SĐT: {branch.phone}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">SĐT: {branch.phone}</p>
                       )}
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 justify-end sm:justify-start">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => openEditModal("branch", branch)}
+                        className="h-8"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="outline" size="sm">
+                          <Button variant="outline" size="sm" className="h-8">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </AlertDialogTrigger>
@@ -839,11 +848,11 @@ export default function SettingsPage() {
             )}
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowModal(false)}>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setShowModal(false)} className="w-full sm:w-auto order-2 sm:order-1">
               Hủy
             </Button>
-            <Button onClick={handleSubmitForm} className="bg-tea-brown hover:bg-tea-brown/90">
+            <Button onClick={handleSubmitForm} className="bg-tea-brown hover:bg-tea-brown/90 w-full sm:w-auto order-1 sm:order-2">
               {editingItem ? "Cập nhật" : "Thêm"}
             </Button>
           </DialogFooter>
