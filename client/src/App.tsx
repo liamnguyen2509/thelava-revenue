@@ -13,6 +13,7 @@ import StockOverview from "@/pages/stock-overview";
 import StockIn from "@/pages/stock-in";
 import StockOut from "@/pages/stock-out";
 import Settings from "@/pages/settings";
+import AccountManagement from "@/pages/account-management";
 import Layout from "@/components/layout/layout";
 import NotFound from "@/pages/not-found";
 
@@ -42,6 +43,7 @@ function Router() {
         <Route path="/stock-in" component={StockIn} />
         <Route path="/stock-out" component={StockOut} />
         <Route path="/settings" component={Settings} />
+        <Route path="/account-management" component={AccountManagement} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

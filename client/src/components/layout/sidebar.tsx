@@ -9,6 +9,7 @@ import {
   ArrowDown,
   ArrowUp,
   Settings,
+  UserCog,
 } from "lucide-react";
 
 const menuItems = [
@@ -61,6 +62,11 @@ const settingsItems = [
     title: "Cài đặt chung",
     href: "/settings",
     icon: Settings,
+  },
+  {
+    title: "Quản lý tài khoản",
+    href: "/account-management",
+    icon: UserCog,
   },
 ];
 
