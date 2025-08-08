@@ -21,6 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useFormattedData } from "@/hooks/useFormattedData";
 import { insertStockItemSchema } from "@shared/schema";
 import type { InsertStockItem, StockItem } from "@shared/schema";
 
@@ -37,14 +38,15 @@ export default function StockItemModal({
 }: StockItemModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { formatInputAmount, parseInputAmount } = useFormattedData();
   const isEditing = Boolean(editingItem);
 
   const form = useForm<InsertStockItem>({
     resolver: zodResolver(insertStockItemSchema),
     defaultValues: {
       name: editingItem?.name || "",
-      category: editingItem?.category || "",
       unit: editingItem?.unit || "",
+      unitPrice: editingItem?.unitPrice || "",
       currentStock: editingItem?.currentStock || "0",
       minStock: editingItem?.minStock || "0",
     },
@@ -55,16 +57,16 @@ export default function StockItemModal({
     if (editingItem) {
       form.reset({
         name: editingItem.name,
-        category: editingItem.category,
         unit: editingItem.unit,
+        unitPrice: editingItem.unitPrice,
         currentStock: editingItem.currentStock,
         minStock: editingItem.minStock,
       });
     } else {
       form.reset({
         name: "",
-        category: "",
         unit: "",
+        unitPrice: "",
         currentStock: "0",
         minStock: "0",
       });
@@ -131,7 +133,7 @@ export default function StockItemModal({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tên hàng hóa</FormLabel>
+                  <FormLabel>Tên hàng hóa *</FormLabel>
                   <FormControl>
                     <Input placeholder="Nhập tên hàng hóa" {...field} />
                   </FormControl>
@@ -143,12 +145,12 @@ export default function StockItemModal({
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="category"
+                name="unit"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Danh mục</FormLabel>
+                    <FormLabel>Đơn vị *</FormLabel>
                     <FormControl>
-                      <Input placeholder="Ví dụ: Trà xanh" {...field} />
+                      <Input placeholder="Ví dụ: kg, túi, hộp" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -157,12 +159,21 @@ export default function StockItemModal({
 
               <FormField
                 control={form.control}
-                name="unit"
+                name="unitPrice"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Đơn vị</FormLabel>
+                    <FormLabel>Giá thành (VNĐ) *</FormLabel>
                     <FormControl>
-                      <Input placeholder="Ví dụ: kg, túi, hộp" {...field} />
+                      <Input
+                        type="text"
+                        placeholder="0"
+                        {...field}
+                        value={field.value ? formatInputAmount(field.value) : ""}
+                        onChange={(e) => {
+                          const rawValue = parseInputAmount(e.target.value);
+                          field.onChange(rawValue);
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

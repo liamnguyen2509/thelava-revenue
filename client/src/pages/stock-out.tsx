@@ -11,13 +11,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useFormattedData } from "@/hooks/useFormattedData";
 import { useToast } from "@/hooks/use-toast";
@@ -38,7 +31,6 @@ import type { StockItem, StockTransaction } from "@shared/schema";
 export default function StockOut() {
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
   const { formatMoney, formatDisplayDate } = useFormattedData();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -54,22 +46,15 @@ export default function StockOut() {
   // Filter stock-out transactions only
   const stockOutTransactions = stockTransactions?.filter(t => t.type === 'out') || [];
 
-  // Get unique categories for filter
-  const categories = Array.from(new Set(
-    stockItems?.map(item => item.category)
-      .filter(category => category && category.trim() !== '') || []
-  ));
 
-  // Filter transactions based on search and category
+  // Filter transactions based on search
   const filteredTransactions = stockOutTransactions.filter(transaction => {
     const item = stockItems?.find(item => item.id === transaction.itemId);
     if (!item) return false;
 
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.category.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || item.category === selectedCategory;
+    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
     
-    return matchesSearch && matchesCategory;
+    return matchesSearch;
   });
 
   // Get low stock items for warnings
@@ -205,21 +190,6 @@ export default function StockOut() {
                 />
               </div>
             </div>
-            <div className="w-full sm:w-48">
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn danh mục" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tất cả danh mục</SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
           </div>
 
           {/* Transactions Table */}
@@ -229,7 +199,6 @@ export default function StockOut() {
                 <TableRow>
                   <TableHead>Ngày xuất</TableHead>
                   <TableHead>Hàng hóa</TableHead>
-                  <TableHead>Danh mục</TableHead>
                   <TableHead className="text-right">Số lượng</TableHead>
                   <TableHead className="text-right">Giá đơn vị</TableHead>
                   <TableHead className="text-right">Tổng tiền</TableHead>
@@ -246,9 +215,6 @@ export default function StockOut() {
                       </TableCell>
                       <TableCell className="font-medium">
                         {item?.name || 'Không rõ'}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{item?.category || 'Không rõ'}</Badge>
                       </TableCell>
                       <TableCell className="text-right">
                         {parseFloat(transaction.quantity).toLocaleString('vi-VN')} {item?.unit}

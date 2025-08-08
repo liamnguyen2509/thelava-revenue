@@ -322,21 +322,10 @@ export class DatabaseStorage implements IStorage {
       parseFloat(item.currentStock) <= parseFloat(item.minStock)
     ).length;
     
-    // Calculate total value (for items that have recent transactions with prices)
-    const transactions = await db.select().from(stockTransactions)
-      .where(sql`${stockTransactions.unitPrice} IS NOT NULL`);
-    
+    // Calculate total value using unit price from stock items
     const totalValue = items.reduce((total, item) => {
-      const recentTransaction = transactions
-        .filter(t => t.itemId === item.id)
-        .sort((a, b) => {
-          const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-          const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-          return dateB - dateA;
-        })[0];
-      
-      if (recentTransaction && recentTransaction.unitPrice) {
-        return total + (parseFloat(item.currentStock) * parseFloat(recentTransaction.unitPrice));
+      if (item.unitPrice) {
+        return total + (parseFloat(item.currentStock) * parseFloat(item.unitPrice));
       }
       return total;
     }, 0);

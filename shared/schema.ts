@@ -72,8 +72,9 @@ export const shareholders = pgTable("shareholders", {
 export const stockItems = pgTable("stock_items", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
-  category: text("category").notNull(),
+  category: text("category"),
   unit: text("unit").notNull(),
+  unitPrice: decimal("unit_price", { precision: 12, scale: 0 }).notNull(),
   currentStock: decimal("current_stock", { precision: 10, scale: 2 }).notNull().default("0"),
   minStock: decimal("min_stock", { precision: 10, scale: 2 }).notNull().default("0"),
   isActive: boolean("is_active").notNull().default(true),
@@ -166,6 +167,10 @@ export const insertShareholderSchema = createInsertSchema(shareholders).omit({
 export const insertStockItemSchema = createInsertSchema(stockItems).omit({
   id: true,
   createdAt: true,
+}).extend({
+  name: z.string().min(1, "Tên hàng hóa là bắt buộc"),
+  unit: z.string().min(1, "Đơn vị là bắt buộc"),
+  unitPrice: z.string().min(1, "Giá thành là bắt buộc"),
 });
 
 export const insertStockTransactionSchema = createInsertSchema(stockTransactions).omit({

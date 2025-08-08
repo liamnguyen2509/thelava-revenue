@@ -206,8 +206,8 @@ export default function StockOverview() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Tên hàng hóa</TableHead>
-                  <TableHead>Danh mục</TableHead>
                   <TableHead>Đơn vị</TableHead>
+                  <TableHead className="text-right">Giá thành</TableHead>
                   <TableHead className="text-right">Tồn kho</TableHead>
                   <TableHead className="text-right">Tồn kho tối thiểu</TableHead>
                   <TableHead>Trạng thái</TableHead>
@@ -218,8 +218,10 @@ export default function StockOverview() {
                 {stockItems.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell className="font-medium">{item.name}</TableCell>
-                    <TableCell>{item.category}</TableCell>
                     <TableCell>{item.unit}</TableCell>
+                    <TableCell className="text-right">
+                      {formatMoney(parseFloat(item.unitPrice || '0'))}
+                    </TableCell>
                     <TableCell className="text-right">
                       {parseFloat(item.currentStock).toLocaleString('vi-VN')}
                     </TableCell>

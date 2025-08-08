@@ -148,7 +148,8 @@ export default function StockTransactionModal({
                     <SelectContent>
                       {stockItems?.filter(item => item.id && item.id.trim() !== '').map((item) => (
                         <SelectItem key={item.id} value={item.id}>
-                          {item.name} ({item.category}) - {item.unit}
+                          {item.name} - {item.unit}
+                          {item.unitPrice && ` - ${parseFloat(item.unitPrice).toLocaleString('vi-VN')} VNĐ`}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -255,6 +256,7 @@ export default function StockTransactionModal({
                     <Textarea
                       placeholder="Ghi chú về giao dịch (tùy chọn)"
                       {...field}
+                      value={field.value || ""}
                       rows={3}
                     />
                   </FormControl>
