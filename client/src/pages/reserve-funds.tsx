@@ -85,7 +85,7 @@ export default function ReserveFunds() {
     { value: null, label: "Tất cả" },
     ...Array.from({ length: 12 }, (_, i) => ({
       value: i + 1,
-      label: `Tháng ${i + 1}`
+      label: `${i + 1}`
     }))
   ];
 
@@ -367,7 +367,7 @@ export default function ReserveFunds() {
               onValueChange={(value) => setSelectedMonth(value === "all" ? null : parseInt(value))}
             >
               <SelectTrigger className="w-32">
-                <SelectValue />
+                <SelectValue placeholder="Tất cả" />
               </SelectTrigger>
               <SelectContent>
                 {months.map((month) => (
