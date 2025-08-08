@@ -7,6 +7,7 @@ import CashFlowChart from "@/components/charts/cash-flow-chart";
 import RevenueChart from "@/components/charts/revenue-chart";
 import { ExpenseModal } from "@/components/modals/expense-modal";
 import { useState } from "react";
+import { useFormattedData } from "@/hooks/useFormattedData";
 import {
   TrendingUp,
   Calendar,
@@ -16,10 +17,12 @@ import {
   Coins,
   Package,
   BarChart3,
+  TrendingDown,
 } from "lucide-react";
 
 export default function Dashboard() {
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
+  const { formatMoney } = useFormattedData();
 
   const { data: dashboard, isLoading } = useQuery({
     queryKey: ["/api/dashboard"],
@@ -55,19 +58,27 @@ export default function Dashboard() {
     );
   }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-      minimumFractionDigits: 0,
-    }).format(amount);
+  // Helper function to get percentage for allocation account
+  const getAccountPercentage = (accountName: string) => {
+    if (!allocationAccounts || !Array.isArray(allocationAccounts)) return 0;
+    const account = allocationAccounts.find((acc: any) => acc.name === accountName);
+    return Number(account?.percentage || 0);
+  };
+
+  // Calculate current monthly net profit for allocation calculations
+  const currentMonthlyProfit = ((revenueSummary as any)?.monthly || 0) - ((expenseSummary as any)?.monthly || 0);
+
+  // Calculate allocation amount for each account
+  const calculateAllocationAmount = (accountName: string) => {
+    const percentage = getAccountPercentage(accountName);
+    return (currentMonthlyProfit * percentage) / 100;
   };
 
   return (
     <div className="space-y-8">
       {/* Dashboard Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Tổng quan Dashboard</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Tổng quan</h1>
         <p className="text-gray-600">Theo dõi doanh thu và hiệu suất kinh doanh của cửa hàng</p>
       </div>
 
@@ -80,7 +91,7 @@ export default function Dashboard() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Doanh thu năm</p>
                 <p className="text-2xl font-bold text-gray-900 mt-2">
-                  {revenueSummary?.annual ? formatCurrency(revenueSummary.annual) : '0 ₫'}
+                  {formatMoney((revenueSummary as any)?.annual || 0)}
                 </p>
                 <p className="text-sm text-green-600 mt-1">
                   <TrendingUp className="inline w-4 h-4 mr-1" />
@@ -101,7 +112,7 @@ export default function Dashboard() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Doanh thu tháng</p>
                 <p className="text-2xl font-bold text-gray-900 mt-2">
-                  {revenueSummary?.monthly ? formatCurrency(revenueSummary.monthly) : '0 ₫'}
+                  {formatMoney((revenueSummary as any)?.monthly || 0)}
                 </p>
                 <p className="text-sm text-green-600 mt-1">
                   <TrendingUp className="inline w-4 h-4 mr-1" />
@@ -122,7 +133,7 @@ export default function Dashboard() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Chi phí tháng</p>
                 <p className="text-2xl font-bold text-gray-900 mt-2">
-                  {expenseSummary?.monthly ? formatCurrency(expenseSummary.monthly) : '0 ₫'}
+                  {formatMoney((expenseSummary as any)?.monthly || 0)}
                 </p>
                 <p className="text-sm text-orange-600 mt-1">
                   <TrendingUp className="inline w-4 h-4 mr-1" />
@@ -143,9 +154,7 @@ export default function Dashboard() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Lợi nhuận ước tính</p>
                 <p className="text-2xl font-bold text-gray-900 mt-2">
-                  {revenueSummary?.monthly && expenseSummary?.monthly 
-                    ? formatCurrency(revenueSummary.monthly - expenseSummary.monthly) 
-                    : '0 ₫'}
+                  {formatMoney(currentMonthlyProfit)}
                 </p>
                 <p className="text-sm text-green-600 mt-1">
                   <TrendingUp className="inline w-4 h-4 mr-1" />
@@ -180,14 +189,14 @@ export default function Dashboard() {
                     </tr>
                   </thead>
                   <tbody className="space-y-2">
-                    {allocationAccounts?.length > 0 ? (
+                    {allocationAccounts && Array.isArray(allocationAccounts) && allocationAccounts.length > 0 ? (
                       allocationAccounts.map((account: any) => (
                         <tr key={account.id} className="border-b border-gray-50">
                           <td className="py-3 text-sm font-medium text-gray-900">{account.name}</td>
                           <td className="py-3 text-sm text-gray-600">{account.description}</td>
                           <td className="py-3 text-sm text-gray-900 text-right">{account.percentage}%</td>
                           <td className="py-3 text-sm font-medium text-gray-900 text-right">
-                            {formatCurrency(0)}
+                            {formatMoney(calculateAllocationAmount(account.name))}
                           </td>
                         </tr>
                       ))
@@ -265,7 +274,7 @@ export default function Dashboard() {
                   className="p-4 h-auto flex flex-col items-center space-y-2"
                 >
                   <Coins className="text-tea-brown w-6 h-6" />
-                  <span className="text-sm font-medium">Thêm doanh thu</span>
+                  <span className="text-sm font-medium">Cập nhật doanh thu</span>
                 </Button>
                 <Button
                   variant="outline"
@@ -278,8 +287,8 @@ export default function Dashboard() {
                   variant="outline"
                   className="p-4 h-auto flex flex-col items-center space-y-2"
                 >
-                  <BarChart3 className="text-tea-brown w-6 h-6" />
-                  <span className="text-sm font-medium">Xem báo cáo</span>
+                  <TrendingDown className="text-tea-brown w-6 h-6" />
+                  <span className="text-sm font-medium">Xuất kho</span>
                 </Button>
               </div>
             </CardContent>
