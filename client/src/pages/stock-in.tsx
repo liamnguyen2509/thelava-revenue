@@ -392,8 +392,72 @@ export default function StockIn() {
         <p className="text-gray-600 text-sm sm:text-base">Quản lý việc nhập hàng vào kho</p>
       </div>
 
-      {/* Mobile Layout: Add Button */}
+      {/* Mobile Layout: Filters, Excel/Print Buttons, and Add Button */}
       <div className="md:hidden space-y-4 mb-6">
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Input
+            placeholder="Tìm kiếm theo tên hàng hóa..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        
+        {/* Year and Month Filters */}
+        <div className="flex gap-2">
+          <Select value={selectedYear} onValueChange={setSelectedYear}>
+            <SelectTrigger className="flex-1">
+              <SelectValue placeholder="Chọn năm" />
+            </SelectTrigger>
+            <SelectContent>
+              {yearOptions.map((year) => (
+                <SelectItem key={year} value={year.toString()}>
+                  {year}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+            <SelectTrigger className="flex-1">
+              <SelectValue placeholder="Chọn tháng" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tất cả tháng</SelectItem>
+              {monthOptions.map((month) => (
+                <SelectItem key={month.value} value={month.value.toString()}>
+                  {month.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        {/* Excel and Print Buttons */}
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={handleExportToExcel}
+            disabled={filteredTransactions.length === 0}
+            className="flex-1"
+          >
+            <FileSpreadsheet className="w-4 h-4 mr-2" />
+            Xuất Excel
+          </Button>
+          
+          <Button
+            variant="outline"
+            onClick={handlePrint}
+            disabled={selectedTransactions.length === 0}
+            className="flex-1"
+          >
+            <Printer className="w-4 h-4 mr-2" />
+            In Phiếu
+          </Button>
+        </div>
+        
         {/* Add Button */}
         <Button 
           onClick={() => {
@@ -515,7 +579,8 @@ export default function StockIn() {
           )}
         </CardHeader>
         <CardContent>
-          <div className="space-y-4 mb-6">
+          {/* Desktop Filters */}
+          <div className="hidden md:block space-y-4 mb-6">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
@@ -597,7 +662,7 @@ export default function StockIn() {
                     <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4">Hàng hóa</th>
                     <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4">Số lượng</th>
                     <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden md:table-cell">Giá đơn vị</th>
-                    <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden md:table-cell">Tổng tiền</th>
+                    <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4">Tổng tiền</th>
                     <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden md:table-cell">Ghi chú</th>
                     <th className="text-center text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden md:table-cell">Thao tác</th>
                   </tr>
@@ -605,69 +670,153 @@ export default function StockIn() {
                 <tbody>
                   {filteredTransactions.map((transaction) => {
                     const item = stockItems?.find(item => item.id === transaction.itemId);
+                    const isExpanded = expandedRows.has(transaction.id);
+                    
                     return (
-                      <tr key={transaction.id} className="border-b border-gray-50 hover:bg-gray-50">
-                        <td className="py-4 px-2 sm:px-4 sticky left-0 bg-white">
-                          <Checkbox 
-                            checked={selectedTransactions.includes(transaction.id)}
-                            onCheckedChange={() => toggleSelectTransaction(transaction.id)}
-                          />
-                        </td>
-                        <td className="py-4 px-2 sm:px-4 text-sm text-gray-900">
-                          <div className="truncate">
-                            {formatDisplayDate(transaction.transactionDate)}
-                          </div>
-                        </td>
-                        <td className="py-4 px-2 sm:px-4 font-medium text-gray-900">
-                          <div className="truncate max-w-[120px] sm:max-w-none" title={item?.name || 'Không rõ'}>
-                            {item?.name || 'Không rõ'}
-                          </div>
-                          <div className="lg:hidden text-xs text-gray-500 mt-1 truncate" title={transaction.notes || '-'}>
-                            {transaction.notes || '-'}
-                          </div>
-                        </td>
-                        <td className="py-4 px-2 sm:px-4 text-right text-sm">
-                          <div className="font-medium">
-                            {parseFloat(transaction.quantity).toLocaleString('vi-VN')} {item?.unit}
-                          </div>
-                          <div className="md:hidden text-xs text-gray-500 mt-1">
-                            Đơn giá: {transaction.unitPrice ? formatMoney(parseFloat(transaction.unitPrice)) : '-'}
-                          </div>
-                        </td>
-                        <td className="py-4 px-2 sm:px-4 text-right text-sm hidden md:table-cell">
-                          {transaction.unitPrice ? formatMoney(parseFloat(transaction.unitPrice)) : '-'}
-                        </td>
-                        <td className="py-4 px-2 sm:px-4 text-right font-medium text-sm">
-                          <div className="truncate">
-                            {transaction.totalPrice ? formatMoney(parseFloat(transaction.totalPrice)) : '-'}
-                          </div>
-                        </td>
-                        <td className="py-4 px-2 sm:px-4 text-sm text-gray-600 hidden lg:table-cell">
-                          <div className="truncate max-w-xs" title={transaction.notes || '-'}>
-                            {transaction.notes || '-'}
-                          </div>
-                        </td>
-                        <td className="py-4 px-2 sm:px-4 text-center">
-                          <div className="flex gap-1 sm:gap-2 justify-center">
+                      <React.Fragment key={transaction.id}>
+                        <tr className="border-b border-gray-50 hover:bg-gray-50">
+                          <td className="py-4 px-2 sm:px-4 sticky left-0 bg-white">
+                            <Checkbox 
+                              checked={selectedTransactions.includes(transaction.id)}
+                              onCheckedChange={() => toggleSelectTransaction(transaction.id)}
+                            />
+                          </td>
+                          
+                          {/* Mobile Expand Button */}
+                          <td className="py-4 px-2 text-center md:hidden">
                             <Button
-                              variant="outline"
+                              variant="ghost"
                               size="sm"
-                              onClick={() => handleEdit(transaction)}
-                              className="h-8 w-8 p-0"
+                              onClick={() => toggleRowExpansion(transaction.id)}
+                              className="h-8 w-8 p-0 hover:bg-gray-100"
                             >
-                              <Edit className="h-4 w-4" />
+                              {isExpanded ? (
+                                <ChevronDown className="h-4 w-4" />
+                              ) : (
+                                <ChevronRightIcon className="h-4 w-4" />
+                              )}
                             </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleDelete(transaction.id)}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
+                          </td>
+                          
+                          {/* Transaction Date - Hidden on mobile */}
+                          <td className="py-4 px-2 sm:px-4 text-sm text-gray-900 hidden md:table-cell">
+                            <div className="truncate">
+                              {formatDisplayDate(transaction.transactionDate)}
+                            </div>
+                          </td>
+                          
+                          {/* Product Name */}
+                          <td className="py-4 px-2 sm:px-4 font-medium text-gray-900">
+                            <div className="truncate max-w-[120px] sm:max-w-none" title={item?.name || 'Không rõ'}>
+                              {item?.name || 'Không rõ'}
+                            </div>
+                          </td>
+                          
+                          {/* Quantity */}
+                          <td className="py-4 px-2 sm:px-4 text-right text-sm">
+                            <div className="font-medium">
+                              <span className="md:hidden">{formatMobileAmount(parseFloat(transaction.quantity))}</span>
+                              <span className="hidden md:inline">{parseFloat(transaction.quantity).toLocaleString('vi-VN')} {item?.unit}</span>
+                            </div>
+                          </td>
+                          
+                          {/* Unit Price - Hidden on mobile */}
+                          <td className="py-4 px-2 sm:px-4 text-right text-sm hidden md:table-cell">
+                            {transaction.unitPrice ? formatMoney(parseFloat(transaction.unitPrice)) : '-'}
+                          </td>
+                          
+                          {/* Total Price */}
+                          <td className="py-4 px-2 sm:px-4 text-right font-medium text-sm">
+                            <div className="truncate">
+                              <span className="md:hidden">{formatMobileAmount(parseFloat(transaction.totalPrice || '0'))}</span>
+                              <span className="hidden md:inline">{transaction.totalPrice ? formatMoney(parseFloat(transaction.totalPrice)) : '-'}</span>
+                            </div>
+                          </td>
+                          
+                          {/* Notes - Hidden on mobile */}
+                          <td className="py-4 px-2 sm:px-4 text-sm text-gray-600 hidden md:table-cell">
+                            <div className="truncate max-w-xs" title={transaction.notes || '-'}>
+                              {transaction.notes || '-'}
+                            </div>
+                          </td>
+                          
+                          {/* Actions - Hidden on mobile */}
+                          <td className="py-4 px-2 sm:px-4 text-center hidden md:table-cell">
+                            <div className="flex gap-1 sm:gap-2 justify-center">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEdit(transaction)}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleDelete(transaction.id)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                        
+                        {/* Expandable Row Details for Mobile */}
+                        {isExpanded && (
+                          <tr className="md:hidden border-b border-gray-50 bg-gray-50">
+                            <td colSpan={4} className="px-4 py-3">
+                              <div className="space-y-2 text-sm">
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Ngày nhập:</span>
+                                  <span className="font-medium">{formatDisplayDate(transaction.transactionDate)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Đơn vị:</span>
+                                  <span className="font-medium">{item?.unit || '-'}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Số lượng chi tiết:</span>
+                                  <span className="font-medium">{parseFloat(transaction.quantity).toLocaleString('vi-VN')} {item?.unit}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Giá đơn vị:</span>
+                                  <span className="font-medium">{transaction.unitPrice ? formatMoney(parseFloat(transaction.unitPrice)) : '-'}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Tổng tiền chi tiết:</span>
+                                  <span className="font-medium">{transaction.totalPrice ? formatMoney(parseFloat(transaction.totalPrice)) : '-'}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Ghi chú:</span>
+                                  <span className="font-medium">{transaction.notes || '-'}</span>
+                                </div>
+                                <div className="flex gap-2 pt-2 justify-end border-t border-gray-200">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleEdit(transaction)}
+                                    className="h-8"
+                                  >
+                                    <Edit className="h-4 w-4 mr-1" />
+                                    Sửa
+                                  </Button>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => handleDelete(transaction.id)}
+                                    className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-1" />
+                                    Xóa
+                                  </Button>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
                     );
                   })}
                 </tbody>

@@ -465,34 +465,59 @@ export default function MonthlyExpenses() {
         </Button>
       </div>
 
-      {/* Desktop Layout: Same as before */}
-      <div className="hidden md:flex flex-wrap gap-4 items-center">
-        <div className="flex items-center gap-2">
-          <Calendar className="h-4 w-4 text-tea-brown" />
-          <Label htmlFor="year-select">Năm:</Label>
-          <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {years.map(year => (
-                <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      {/* Desktop Layout: Filters and Add Button */}
+      <div className="hidden md:flex flex-wrap gap-4 items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Label htmlFor="year-select">Năm:</Label>
+            <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {years.map(year => (
+                  <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="month-select">Tháng:</Label>
+            <Select value={selectedMonth.toString()} onValueChange={(value) => setSelectedMonth(parseInt(value))}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {months.map(month => (
+                  <SelectItem key={month.value} value={month.value.toString()}>{month.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Label htmlFor="month-select">Tháng:</Label>
-          <Select value={selectedMonth.toString()} onValueChange={(value) => setSelectedMonth(parseInt(value))}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {months.map(month => (
-                <SelectItem key={month.value} value={month.value.toString()}>{month.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="flex gap-2">
+          {selectedExpenses.length > 0 && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleDeleteMultiple}
+              disabled={deleteMultipleMutation.isPending}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Xóa ({selectedExpenses.length})
+            </Button>
+          )}
+          <Button
+            onClick={() => {
+              setEditingExpense(null);
+              resetForm();
+              setIsModalOpen(true);
+            }}
+            className="bg-tea-brown hover:bg-tea-brown/90"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Thêm khoản chi
+          </Button>
         </div>
       </div>
 
@@ -556,31 +581,6 @@ export default function MonthlyExpenses() {
           <p className="text-sm text-gray-600 mt-1">
             Hiển thị chi tiêu tháng {selectedMonth}/{selectedYear}
           </p>
-          {/* Desktop Add Button */}
-          <div className="hidden md:flex gap-2 mt-4">
-            {selectedExpenses.length > 0 && (
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={handleDeleteMultiple}
-                disabled={deleteMultipleMutation.isPending}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Xóa ({selectedExpenses.length})
-              </Button>
-            )}
-            <Button
-              onClick={() => {
-                setEditingExpense(null);
-                resetForm();
-                setIsModalOpen(true);
-              }}
-              className="bg-tea-brown hover:bg-tea-brown/90"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Thêm khoản chi
-            </Button>
-          </div>
           {/* Mobile Bulk Delete Button */}
           {selectedExpenses.length > 0 && (
             <div className="md:hidden mt-4">
