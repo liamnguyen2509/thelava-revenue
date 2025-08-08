@@ -145,6 +145,16 @@ export default function CashFlow() {
     setEditingRevenue({ month, amount: Math.round(currentAmount) });
   };
 
+  // Function to format number with dots for display in input
+  const formatNumberForInput = (amount: number) => {
+    return Math.round(amount).toLocaleString('vi-VN').replace(/,/g, '.');
+  };
+
+  // Function to parse number from input (remove dots)
+  const parseNumberFromInput = (value: string) => {
+    return parseFloat(value.replace(/\./g, '')) || 0;
+  };
+
   const handleRevenueUpdate = (month: number, newAmount: number) => {
     updateRevenueMutation.mutate({
       month: month,
@@ -296,12 +306,15 @@ export default function CashFlow() {
                           <div className="flex items-center justify-end space-x-2">
                             {editingRevenue?.month === index + 1 ? (
                               <Input
-                                type="number"
-                                value={editingRevenue.amount}
-                                onChange={(e) => setEditingRevenue({
-                                  ...editingRevenue,
-                                  amount: parseFloat(e.target.value) || 0
-                                })}
+                                type="text"
+                                value={formatNumberForInput(editingRevenue.amount)}
+                                onChange={(e) => {
+                                  const numericValue = parseNumberFromInput(e.target.value);
+                                  setEditingRevenue({
+                                    ...editingRevenue,
+                                    amount: numericValue
+                                  });
+                                }}
                                 onBlur={() => handleRevenueUpdate(index + 1, editingRevenue.amount)}
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') {
