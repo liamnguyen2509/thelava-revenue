@@ -427,25 +427,25 @@ export default function ReserveFunds() {
         <div className="lg:col-span-1 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Tổng phân bổ quỹ</CardTitle>
-              <p className="text-sm text-gray-600">Tổng phân bổ quỹ năm {selectedYear}</p>
+              <CardTitle>Tổng chi quỹ</CardTitle>
+              <p className="text-sm text-gray-600">Tổng chi tiêu năm {selectedYear}</p>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">
+                  <div className="text-2xl font-bold text-red-600">
                     {(() => {
                       const filteredTotal = filteredAllocationAccounts.reduce((sum, account) => 
-                        sum + (yearlyAllocations[account.name] || 0), 0);
+                        sum + (expenditureSummary?.byAccount?.[account.name] || 0), 0);
                       return filteredTotal > 0 ? formatCurrency(filteredTotal) : "0";
                     })()}
                   </div>
-                  <p className="text-sm text-gray-600">Tổng phân bổ trong năm</p>
+                  <p className="text-sm text-gray-600">Tổng chi trong năm</p>
                 </div>
                 
                 <div className="space-y-3">
                   {filteredAllocationAccounts.map((account, index) => {
-                    const amount = yearlyAllocations[account.name] || 0;
+                    const amount = expenditureSummary?.byAccount?.[account.name] || 0;
                     const Icon = getAccountTypeIcon(index);
                     
                     return (
@@ -466,14 +466,14 @@ export default function ReserveFunds() {
           {/* Expenditure Pie Chart */}
           <Card>
             <CardHeader>
-              <CardTitle>Biểu đồ phân bổ</CardTitle>
-              <p className="text-sm text-gray-600">Tỷ lệ phân bổ theo loại quỹ</p>
+              <CardTitle>Biểu đồ chi tiêu</CardTitle>
+              <p className="text-sm text-gray-600">Tỷ lệ chi tiêu theo loại quỹ</p>
             </CardHeader>
             <CardContent>
               <ExpenditurePieChart data={(() => {
                 const filteredData: { [key: string]: number } = {};
                 filteredAllocationAccounts.forEach(account => {
-                  const amount = yearlyAllocations[account.name];
+                  const amount = expenditureSummary?.byAccount?.[account.name];
                   if (amount && amount > 0) {
                     filteredData[account.name] = amount;
                   }
