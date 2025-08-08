@@ -146,7 +146,7 @@ export default function StockTransactionModal({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {stockItems?.map((item) => (
+                      {stockItems?.filter(item => item.id && item.id.trim() !== '').map((item) => (
                         <SelectItem key={item.id} value={item.id}>
                           {item.name} ({item.category}) - {item.unit}
                         </SelectItem>
