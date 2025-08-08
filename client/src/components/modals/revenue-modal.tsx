@@ -69,21 +69,9 @@ export default function RevenueModal({ open, onOpenChange }: RevenueModalProps) 
 
   const createMutation = useMutation({
     mutationFn: async (data: InsertRevenue) => {
-      // Check if revenue for this month/year already exists
-      const existingRevenues = await fetch(`/api/revenues/${data.year}`).then(res => res.json());
-      const existingRevenue = Array.isArray(existingRevenues) 
-        ? existingRevenues.find((r: any) => r.month === data.month)
-        : null;
-
-      if (existingRevenue) {
-        // Update existing revenue
-        const res = await apiRequest(`/api/revenues/${existingRevenue.id}`, "PUT", data);
-        return res.json();
-      } else {
-        // Create new revenue
-        const res = await apiRequest("/api/revenues", "POST", data);
-        return res.json();
-      }
+      // Use POST endpoint with upsert logic
+      const res = await apiRequest("/api/revenues", "POST", data);
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/revenues"] });
@@ -96,10 +84,11 @@ export default function RevenueModal({ open, onOpenChange }: RevenueModalProps) 
       form.reset();
       onOpenChange(false);
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error("Revenue update error:", error);
       toast({
         title: "Lỗi",
-        description: "Không thể cập nhật doanh thu",
+        description: error?.message || "Không thể cập nhật doanh thu",
         variant: "destructive",
       });
     },
