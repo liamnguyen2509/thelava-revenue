@@ -34,6 +34,8 @@ interface IStorage {
   createStockTransaction(insertStockTransaction: InsertStockTransaction): Promise<StockTransaction>;
   updateStockAfterTransaction(itemId: string, quantity: number, type: 'in' | 'out'): Promise<void>;
   getStockSummary(): Promise<{ totalItems: number; lowStockItems: number; totalValue: number }>;
+  getStockTransactionSummary(itemId: string): Promise<{ totalIn: number; totalOut: number }>;
+  getStockItemsWithTransactionSummary(): Promise<(StockItem & { totalIn: number; totalOut: number })[]>;
   getAllocationAccounts(): Promise<AllocationAccount[]>;
   createAllocationAccount(insertAllocationAccount: InsertAllocationAccount): Promise<AllocationAccount>;
   getReserveAllocations(year: number, month?: number): Promise<ReserveAllocation[]>;
@@ -331,6 +333,37 @@ export class DatabaseStorage implements IStorage {
     }, 0);
     
     return { totalItems, lowStockItems, totalValue };
+  }
+
+  async getStockTransactionSummary(itemId: string): Promise<{ totalIn: number; totalOut: number }> {
+    const transactions = await db.select().from(stockTransactions).where(eq(stockTransactions.itemId, itemId));
+    
+    const totalIn = transactions
+      .filter(t => t.type === 'in')
+      .reduce((sum, t) => sum + parseFloat(t.quantity), 0);
+    
+    const totalOut = transactions
+      .filter(t => t.type === 'out')
+      .reduce((sum, t) => sum + parseFloat(t.quantity), 0);
+    
+    return { totalIn, totalOut };
+  }
+
+  async getStockItemsWithTransactionSummary(): Promise<(StockItem & { totalIn: number; totalOut: number })[]> {
+    const items = await db.select().from(stockItems).where(eq(stockItems.isActive, true));
+    
+    const itemsWithSummary = await Promise.all(
+      items.map(async (item) => {
+        const summary = await this.getStockTransactionSummary(item.id);
+        return {
+          ...item,
+          totalIn: summary.totalIn,
+          totalOut: summary.totalOut
+        };
+      })
+    );
+    
+    return itemsWithSummary;
   }
 
   async getAllocationAccounts(): Promise<AllocationAccount[]> {

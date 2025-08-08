@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -42,15 +43,22 @@ interface StockSummary {
   totalValue: number;
 }
 
+type StockItemWithSummary = StockItem & { totalIn: number; totalOut: number };
+
 export default function StockOverview() {
   const [isStockItemModalOpen, setIsStockItemModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<StockItem | null>(null);
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deleteItemId, setDeleteItemId] = useState<string | null>(null);
+  const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
   const { formatMoney } = useFormattedData();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: stockItems, isLoading: itemsLoading } = useQuery<StockItem[]>({
+  const { data: stockItems, isLoading: itemsLoading } = useQuery<StockItemWithSummary[]>({
     queryKey: ["/api/stock/items"],
+    queryFn: () => fetch('/api/stock/items?withSummary=true').then(res => res.json()),
   });
 
   const { data: stockSummary, isLoading: summaryLoading } = useQuery<StockSummary>({
@@ -65,9 +73,35 @@ export default function StockOverview() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/stock/items"] });
       queryClient.invalidateQueries({ queryKey: ["/api/stock/summary"] });
+      setIsDeleteDialogOpen(false);
+      setDeleteItemId(null);
       toast({
         title: "Thành công",
         description: "Đã xóa hàng hóa thành công",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Lỗi",
+        description: "Không thể xóa hàng hóa",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const res = await apiRequest('/api/stock/items', 'DELETE', { ids });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/stock/items"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stock/summary"] });
+      setSelectedItems([]);
+      setIsBulkDeleteDialogOpen(false);
+      toast({
+        title: "Thành công",
+        description: "Đã xóa các hàng hóa đã chọn",
       });
     },
     onError: () => {
@@ -85,7 +119,40 @@ export default function StockOverview() {
   };
 
   const handleDelete = (id: string) => {
-    deleteMutation.mutate(id);
+    setDeleteItemId(id);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (deleteItemId) {
+      deleteMutation.mutate(deleteItemId);
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedItems.length > 0) {
+      setIsBulkDeleteDialogOpen(true);
+    }
+  };
+
+  const confirmBulkDelete = () => {
+    bulkDeleteMutation.mutate(selectedItems);
+  };
+
+  const toggleSelectItem = (itemId: string) => {
+    setSelectedItems(prev => 
+      prev.includes(itemId) 
+        ? prev.filter(id => id !== itemId)
+        : [...prev, itemId]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedItems.length === stockItems?.length) {
+      setSelectedItems([]);
+    } else {
+      setSelectedItems(stockItems?.map(item => item.id) || []);
+    }
   };
 
   const getStatusBadge = (item: StockItem) => {
@@ -129,16 +196,28 @@ export default function StockOverview() {
           <h1 className="text-3xl font-bold text-gray-900">Tổng quan kho hàng</h1>
           <p className="text-gray-600">Theo dõi tình trạng kho hàng tổng thể</p>
         </div>
-        <Button 
-          onClick={() => {
-            setEditingItem(null);
-            setIsStockItemModalOpen(true);
-          }}
-          className="bg-tea-brown hover:bg-tea-brown/90"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Thêm hàng hóa
-        </Button>
+        <div className="flex gap-2">
+          {selectedItems.length > 0 && (
+            <Button 
+              onClick={handleBulkDelete}
+              variant="destructive"
+              disabled={bulkDeleteMutation.isPending}
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Xóa {selectedItems.length} mục
+            </Button>
+          )}
+          <Button 
+            onClick={() => {
+              setEditingItem(null);
+              setIsStockItemModalOpen(true);
+            }}
+            className="bg-tea-brown hover:bg-tea-brown/90"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Thêm hàng hóa
+          </Button>
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -205,11 +284,18 @@ export default function StockOverview() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12">
+                    <Checkbox 
+                      checked={selectedItems.length === stockItems?.length && stockItems?.length > 0}
+                      onCheckedChange={toggleSelectAll}
+                    />
+                  </TableHead>
                   <TableHead>Tên hàng hóa</TableHead>
                   <TableHead>Đơn vị</TableHead>
                   <TableHead className="text-right">Giá thành</TableHead>
+                  <TableHead className="text-right">Nhập kho</TableHead>
+                  <TableHead className="text-right">Xuất kho</TableHead>
                   <TableHead className="text-right">Tồn kho</TableHead>
-                  <TableHead className="text-right">Tồn kho tối thiểu</TableHead>
                   <TableHead>Trạng thái</TableHead>
                   <TableHead className="text-right">Thao tác</TableHead>
                 </TableRow>
@@ -217,16 +303,29 @@ export default function StockOverview() {
               <TableBody>
                 {stockItems.map((item) => (
                   <TableRow key={item.id}>
+                    <TableCell>
+                      <Checkbox 
+                        checked={selectedItems.includes(item.id)}
+                        onCheckedChange={() => toggleSelectItem(item.id)}
+                      />
+                    </TableCell>
                     <TableCell className="font-medium">{item.name}</TableCell>
                     <TableCell>{item.unit}</TableCell>
                     <TableCell className="text-right">
                       {formatMoney(parseFloat(item.unitPrice || '0'))}
                     </TableCell>
                     <TableCell className="text-right">
-                      {parseFloat(item.currentStock).toLocaleString('vi-VN')}
+                      <span className="text-green-600 font-medium">
+                        {(item.totalIn || 0).toLocaleString('vi-VN')}
+                      </span>
                     </TableCell>
                     <TableCell className="text-right">
-                      {parseFloat(item.minStock).toLocaleString('vi-VN')}
+                      <span className="text-red-600 font-medium">
+                        {(item.totalOut || 0).toLocaleString('vi-VN')}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {parseFloat(item.currentStock).toLocaleString('vi-VN')}
                     </TableCell>
                     <TableCell>{getStatusBadge(item)}</TableCell>
                     <TableCell className="text-right">
@@ -238,30 +337,14 @@ export default function StockOverview() {
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Xác nhận xóa</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Bạn có chắc muốn xóa hàng hóa "{item.name}"? Hành động này không thể hoàn tác.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Hủy</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDelete(item.id)}
-                                className="bg-red-600 hover:bg-red-700"
-                              >
-                                Xóa
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleDelete(item.id)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -297,6 +380,50 @@ export default function StockOverview() {
         }}
         editingItem={editingItem}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc muốn xóa hàng hóa này? Hành động này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? "Đang xóa..." : "Xóa"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <AlertDialog open={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa hàng loạt</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc muốn xóa {selectedItems.length} hàng hóa đã chọn? Hành động này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmBulkDelete}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={bulkDeleteMutation.isPending}
+            >
+              {bulkDeleteMutation.isPending ? "Đang xóa..." : "Xóa tất cả"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

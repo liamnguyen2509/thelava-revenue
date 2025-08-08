@@ -225,8 +225,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Stock routes
   app.get("/api/stock/items", requireAuth, async (req, res) => {
     try {
-      const items = await storage.getStockItems();
-      res.json(items);
+      const withSummary = req.query.withSummary === 'true';
+      if (withSummary) {
+        const items = await storage.getStockItemsWithTransactionSummary();
+        res.json(items);
+      } else {
+        const items = await storage.getStockItems();
+        res.json(items);
+      }
     } catch (error) {
       res.status(500).json({ message: "Lỗi khi lấy danh sách hàng hóa" });
     }
@@ -290,6 +296,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       await storage.deleteStockItem(id);
       res.json({ message: "Đã xóa hàng hóa thành công" });
+    } catch (error) {
+      res.status(500).json({ message: "Lỗi khi xóa hàng hóa" });
+    }
+  });
+
+  // Bulk delete stock items
+  app.delete("/api/stock/items", requireAuth, async (req, res) => {
+    try {
+      const { ids } = req.body;
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ message: "Danh sách ID không hợp lệ" });
+      }
+      
+      // Delete all items in the array
+      await Promise.all(ids.map(id => storage.deleteStockItem(id)));
+      res.json({ message: `Đã xóa ${ids.length} hàng hóa thành công` });
     } catch (error) {
       res.status(500).json({ message: "Lỗi khi xóa hàng hóa" });
     }

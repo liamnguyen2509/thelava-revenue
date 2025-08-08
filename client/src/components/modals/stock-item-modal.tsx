@@ -23,7 +23,8 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useFormattedData } from "@/hooks/useFormattedData";
 import { insertStockItemSchema } from "@shared/schema";
-import type { InsertStockItem, StockItem } from "@shared/schema";
+import type { InsertStockItem, StockItem, SystemSetting } from "@shared/schema";
+import { useQuery } from "@tanstack/react-query";
 
 interface StockItemModalProps {
   open: boolean;
@@ -40,6 +41,17 @@ export default function StockItemModal({
   const queryClient = useQueryClient();
   const { formatInputAmount, parseInputAmount } = useFormattedData();
   const isEditing = Boolean(editingItem);
+
+  // Get system settings for currency
+  const { data: systemSettings = [] } = useQuery<SystemSetting[]>({
+    queryKey: ["/api/settings/system"],
+  });
+
+  // Get currency from settings
+  const getCurrency = () => {
+    const currencySetting = systemSettings.find(s => s.key === "currency");
+    return currencySetting?.value || "VNĐ";
+  };
 
   const form = useForm<InsertStockItem>({
     resolver: zodResolver(insertStockItemSchema),
@@ -162,7 +174,7 @@ export default function StockItemModal({
                 name="unitPrice"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Giá thành (VNĐ) *</FormLabel>
+                    <FormLabel>Giá thành ({getCurrency()}) *</FormLabel>
                     <FormControl>
                       <Input
                         type="text"
@@ -192,9 +204,14 @@ export default function StockItemModal({
                       <Input
                         type="number"
                         placeholder="0"
-                        step="0.01"
+                        step="1"
                         min="0"
                         {...field}
+                        value={field.value ? Math.floor(parseFloat(field.value)).toString() : ""}
+                        onChange={(e) => {
+                          const value = e.target.value === "" ? "0" : Math.floor(parseFloat(e.target.value) || 0).toString();
+                          field.onChange(value);
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -212,9 +229,14 @@ export default function StockItemModal({
                       <Input
                         type="number"
                         placeholder="0"
-                        step="0.01"
+                        step="1"
                         min="0"
                         {...field}
+                        value={field.value ? Math.floor(parseFloat(field.value)).toString() : ""}
+                        onChange={(e) => {
+                          const value = e.target.value === "" ? "0" : Math.max(0, Math.floor(parseFloat(e.target.value) || 0)).toString();
+                          field.onChange(value);
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
