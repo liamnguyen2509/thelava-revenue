@@ -49,6 +49,7 @@ import { z } from "zod";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface StockTransactionModalProps {
   open: boolean;
@@ -68,6 +69,8 @@ export default function StockTransactionModal({
   const { formatInputAmount, parseInputAmount, formatDisplayDate, currency } = useFormattedData();
   const [showQuickAdd, setShowQuickAdd] = React.useState(false);
   const [isCreatingProduct, setIsCreatingProduct] = React.useState(false);
+  const [stockWarning, setStockWarning] = React.useState<string | null>(null);
+  const [hasStockError, setHasStockError] = React.useState(false);
 
   const { data: stockItems } = useQuery<StockItem[]>({
     queryKey: ["/api/stock/items"],
@@ -77,15 +80,45 @@ export default function StockTransactionModal({
     queryKey: ["/api/settings/system"],
   });
 
-  // Enhanced validation schema
+  // Enhanced validation schema with stock validation for out transactions
   const enhancedSchema = insertStockTransactionSchema.extend({
     itemId: z.string().min(1, "Vui lòng chọn hàng hóa"),
     quantity: z.string().refine(
       (val) => {
         const num = parseFloat(val);
-        return !isNaN(num) && num > 0;
+        if (isNaN(num) || num <= 0) {
+          return false;
+        }
+        
+        // Additional validation for stock-out transactions
+        if (transactionType === "out" && watchedItemId && stockItems) {
+          const selectedItem = stockItems.find(item => item.id === watchedItemId);
+          if (selectedItem) {
+            const availableStock = parseFloat(selectedItem.currentStock);
+            return num <= availableStock;
+          }
+        }
+        
+        return true;
       },
-      "Số lượng phải lớn hơn 0"
+      (val) => {
+        const num = parseFloat(val);
+        if (isNaN(num) || num <= 0) {
+          return "Số lượng phải lớn hơn 0";
+        }
+        
+        if (transactionType === "out" && watchedItemId && stockItems) {
+          const selectedItem = stockItems.find(item => item.id === watchedItemId);
+          if (selectedItem) {
+            const availableStock = parseFloat(selectedItem.currentStock);
+            if (num > availableStock) {
+              return `Số lượng xuất không thể vượt quá tồn kho hiện tại (${availableStock.toLocaleString('vi-VN')} ${selectedItem.unit})`;
+            }
+          }
+        }
+        
+        return "Số lượng phải lớn hơn 0";
+      }
     ),
   });
 
@@ -167,7 +200,7 @@ export default function StockTransactionModal({
     }
   }, [watchedItemId, stockItems, form]);
 
-  // Auto-calculate total price
+  // Auto-calculate total price and check stock validation
   React.useEffect(() => {
     const quantity = parseFloat(watchedQuantity || "0");
     const unitPrice = parseFloat(parseInputAmount(watchedUnitPrice || "0"));
@@ -178,7 +211,27 @@ export default function StockTransactionModal({
     } else {
       form.setValue("totalPrice", "");
     }
-  }, [watchedQuantity, watchedUnitPrice, form, parseInputAmount]);
+    
+    // Check stock validation for out transactions
+    if (transactionType === "out" && watchedItemId && stockItems && watchedQuantity) {
+      const selectedItem = stockItems.find(item => item.id === watchedItemId);
+      if (selectedItem) {
+        const availableStock = parseFloat(selectedItem.currentStock);
+        const requestedQuantity = parseFloat(watchedQuantity);
+        
+        if (requestedQuantity > availableStock) {
+          setStockWarning(`⚠️ Cảnh báo: Số lượng tồn kho hiện tại chỉ còn ${availableStock.toLocaleString('vi-VN')} ${selectedItem.unit}`);
+          setHasStockError(true);
+        } else {
+          setStockWarning(null);
+          setHasStockError(false);
+        }
+      }
+    } else {
+      setStockWarning(null);
+      setHasStockError(false);
+    }
+  }, [watchedQuantity, watchedUnitPrice, watchedItemId, stockItems, transactionType, form, parseInputAmount]);
 
   const createMutation = useMutation({
     mutationFn: async (data: InsertStockTransaction) => {
@@ -490,8 +543,17 @@ export default function StockTransactionModal({
                             field.onChange(value);
                           }
                         }}
+                        className={hasStockError ? "border-red-500 focus:ring-red-500" : ""}
                       />
                     </FormControl>
+                    {stockWarning && transactionType === "out" && (
+                      <Alert className="mt-2 border-orange-200 bg-orange-50">
+                        <AlertTriangle className="h-4 w-4 text-orange-600" />
+                        <AlertDescription className="text-orange-800 text-sm">
+                          {stockWarning}
+                        </AlertDescription>
+                      </Alert>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
@@ -625,7 +687,7 @@ export default function StockTransactionModal({
               </Button>
               <Button 
                 type="submit" 
-                disabled={isPending} 
+                disabled={isPending || (transactionType === "out" && hasStockError)} 
                 className="bg-tea-brown hover:bg-tea-brown/90"
               >
                 {isPending 
