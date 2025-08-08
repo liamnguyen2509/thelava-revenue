@@ -82,7 +82,7 @@ export default function ReserveFunds() {
   
   // Generate months array with "Tất cả" option
   const months = [
-    { value: null, label: "Tất cả" },
+    { value: "all", label: "Tất cả" },
     ...Array.from({ length: 12 }, (_, i) => ({
       value: i + 1,
       label: `${i + 1}`
@@ -371,7 +371,7 @@ export default function ReserveFunds() {
               </SelectTrigger>
               <SelectContent>
                 {months.map((month) => (
-                  <SelectItem key={month.value || "all"} value={month.value?.toString() || "all"}>
+                  <SelectItem key={month.value.toString()} value={month.value.toString()}>
                     {month.label}
                   </SelectItem>
                 ))}
