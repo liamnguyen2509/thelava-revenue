@@ -121,15 +121,17 @@ export default function Dashboard() {
       const netProfit = parseFloat(monthRevenue.toString()) - monthlyExpenses;
 
       // Calculate allocations for each account
-      allocationAccounts.forEach((account: any) => {
-        if (!yearlyAllocations[account.name]) {
-          yearlyAllocations[account.name] = 0;
-        }
-        
-        const percentage = Number(account.percentage || 0);
-        const monthlyAllocation = (netProfit * percentage) / 100;
-        yearlyAllocations[account.name] += Math.max(0, monthlyAllocation);
-      });
+      if (Array.isArray(allocationAccounts)) {
+        allocationAccounts.forEach((account: any) => {
+          if (!yearlyAllocations[account.name]) {
+            yearlyAllocations[account.name] = 0;
+          }
+          
+          const percentage = Number(account.percentage || 0);
+          const monthlyAllocation = (netProfit * percentage) / 100;
+          yearlyAllocations[account.name] += Math.max(0, monthlyAllocation);
+        });
+      }
     }
 
     return yearlyAllocations;

@@ -337,6 +337,9 @@ export default function CashFlow() {
                   <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">
                     Marketing ({getAccountPercentage("Marketing")}%)
                   </th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">
+                    TỔNG
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -359,6 +362,14 @@ export default function CashFlow() {
                   const dividends = getAccountAllocation("Cổ tức");
                   const marketing = getAccountAllocation("Marketing");
 
+                  // Calculate total allocation for the month
+                  const totalAllocation = Math.max(0, reinvestment) + 
+                                        Math.max(0, depreciation) + 
+                                        Math.max(0, riskReserve) + 
+                                        Math.max(0, staffBonus) + 
+                                        Math.max(0, dividends) + 
+                                        Math.max(0, marketing);
+
                   return (
                     <tr key={index} className="border-b border-gray-50">
                       <td className="py-4 text-sm font-medium text-gray-900">{month}</td>
@@ -379,6 +390,9 @@ export default function CashFlow() {
                       </td>
                       <td className="py-4 text-sm text-gray-900 text-right">
                         {formatCurrency(Math.max(0, marketing))}
+                      </td>
+                      <td className="py-4 text-sm font-bold text-tea-brown text-right">
+                        {formatCurrency(totalAllocation)}
                       </td>
                     </tr>
                   );
