@@ -65,6 +65,7 @@ export default function ReserveFunds() {
   const [isAllocationModalOpen, setIsAllocationModalOpen] = useState(false);
   const [isExpenditureModalOpen, setIsExpenditureModalOpen] = useState(false);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(null); // null means "Tất cả"
   const [selectedExpenditure, setSelectedExpenditure] = useState<ReserveExpenditure | null>(null);
   const [selectedExpenditures, setSelectedExpenditures] = useState<string[]>([]);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -78,10 +79,25 @@ export default function ReserveFunds() {
 
   // Generate years array like in cash flow page
   const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
+  
+  // Generate months array with "Tất cả" option
+  const months = [
+    { value: null, label: "Tất cả" },
+    ...Array.from({ length: 12 }, (_, i) => ({
+      value: i + 1,
+      label: `Tháng ${i + 1}`
+    }))
+  ];
 
   const { data: allocations } = useQuery<ReserveAllocation[]>({
-    queryKey: ["/api/reserve-allocations", selectedYear],
-    queryFn: () => fetch(`/api/reserve-allocations?year=${selectedYear}`).then(res => res.json()),
+    queryKey: ["/api/reserve-allocations", selectedYear, selectedMonth],
+    queryFn: () => {
+      const params = new URLSearchParams({ year: selectedYear.toString() });
+      if (selectedMonth !== null) {
+        params.append('month', selectedMonth.toString());
+      }
+      return fetch(`/api/reserve-allocations?${params}`).then(res => res.json());
+    },
   });
 
   const { data: summary } = useQuery<SummaryData>({
@@ -98,13 +114,25 @@ export default function ReserveFunds() {
   });
 
   const { data: expenditures } = useQuery<ReserveExpenditure[]>({
-    queryKey: ["/api/reserve-expenditures", selectedYear],
-    queryFn: () => fetch(`/api/reserve-expenditures?year=${selectedYear}`).then(res => res.json()),
+    queryKey: ["/api/reserve-expenditures", selectedYear, selectedMonth],
+    queryFn: () => {
+      const params = new URLSearchParams({ year: selectedYear.toString() });
+      if (selectedMonth !== null) {
+        params.append('month', selectedMonth.toString());
+      }
+      return fetch(`/api/reserve-expenditures?${params}`).then(res => res.json());
+    },
   });
 
   const { data: expenditureSummary } = useQuery<ExpenditureSummaryData>({
-    queryKey: ["/api/reserve-expenditures/summary", selectedYear],
-    queryFn: () => fetch(`/api/reserve-expenditures/summary/${selectedYear}`).then(res => res.json()),
+    queryKey: ["/api/reserve-expenditures/summary", selectedYear, selectedMonth],
+    queryFn: () => {
+      const params = new URLSearchParams({ year: selectedYear.toString() });
+      if (selectedMonth !== null) {
+        params.append('month', selectedMonth.toString());
+      }
+      return fetch(`/api/reserve-expenditures/summary/${selectedYear}?${params}`).then(res => res.json());
+    },
   });
 
   // Fetch system settings for currency
@@ -166,24 +194,24 @@ export default function ReserveFunds() {
     return allocationAccounts.find(acc => acc.name === accountName);
   };
 
-  // Calculate total allocations for the year based on cash flow logic
-  const calculateYearlyAllocations = () => {
+  // Calculate allocations based on selected time period (year or month)
+  const calculateAllocations = () => {
     if (!revenues || !expenses || !allocationAccounts) {
       return {};
     }
 
-    const yearlyAllocations: { [key: string]: number } = {};
+    const allocations: { [key: string]: number } = {};
 
-    // Calculate for each month (1-12)
-    for (let month = 1; month <= 12; month++) {
+    // If specific month is selected, calculate for that month only
+    if (selectedMonth !== null) {
       // Get monthly revenue
       const monthRevenue = Array.isArray(revenues) 
-        ? revenues.find((r: any) => r.month === month)?.amount || 0 
+        ? revenues.find((r: any) => r.month === selectedMonth)?.amount || 0 
         : 0;
 
       // Calculate total monthly expenses
       const monthlyExpenses = Array.isArray(expenses)
-        ? expenses.filter((e: any) => e.month === month)
+        ? expenses.filter((e: any) => e.month === selectedMonth)
             .reduce((sum: number, expense: any) => sum + parseFloat(expense.amount || '0'), 0)
         : 0;
 
@@ -192,20 +220,44 @@ export default function ReserveFunds() {
 
       // Calculate allocations for each account
       allocationAccounts.forEach(account => {
-        if (!yearlyAllocations[account.name]) {
-          yearlyAllocations[account.name] = 0;
-        }
-        
         const percentage = Number(account.percentage || 0);
         const monthlyAllocation = (netProfit * percentage) / 100;
-        yearlyAllocations[account.name] += Math.max(0, monthlyAllocation);
+        allocations[account.name] = Math.max(0, monthlyAllocation);
       });
+    } else {
+      // Calculate for the entire year (existing logic)
+      for (let month = 1; month <= 12; month++) {
+        // Get monthly revenue
+        const monthRevenue = Array.isArray(revenues) 
+          ? revenues.find((r: any) => r.month === month)?.amount || 0 
+          : 0;
+
+        // Calculate total monthly expenses
+        const monthlyExpenses = Array.isArray(expenses)
+          ? expenses.filter((e: any) => e.month === month)
+              .reduce((sum: number, expense: any) => sum + parseFloat(expense.amount || '0'), 0)
+          : 0;
+
+        // Calculate net profit for the month
+        const netProfit = parseFloat(monthRevenue.toString()) - monthlyExpenses;
+
+        // Calculate allocations for each account
+        allocationAccounts.forEach(account => {
+          if (!allocations[account.name]) {
+            allocations[account.name] = 0;
+          }
+          
+          const percentage = Number(account.percentage || 0);
+          const monthlyAllocation = (netProfit * percentage) / 100;
+          allocations[account.name] += Math.max(0, monthlyAllocation);
+        });
+      }
     }
 
-    return yearlyAllocations;
+    return allocations;
   };
 
-  const yearlyAllocations = calculateYearlyAllocations();
+  const currentAllocations = calculateAllocations();
 
   const getAccountColor = (accountName: string) => {
     const index = allocationAccounts.findIndex(acc => acc.name === accountName);
@@ -308,6 +360,24 @@ export default function ReserveFunds() {
               </SelectContent>
             </Select>
           </div>
+          <div className="flex items-center space-x-2">
+            <Label htmlFor="month">Tháng:</Label>
+            <Select 
+              value={selectedMonth?.toString() || "all"} 
+              onValueChange={(value) => setSelectedMonth(value === "all" ? null : parseInt(value))}
+            >
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {months.map((month) => (
+                  <SelectItem key={month.value || "all"} value={month.value?.toString() || "all"}>
+                    {month.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <Button 
             onClick={() => {
               setSelectedExpenditure(null);
@@ -332,7 +402,7 @@ export default function ReserveFunds() {
           ];
           const style = colorStyles[index % colorStyles.length];
           const IconComponent = getAccountTypeIcon(index);
-          const amount = yearlyAllocations[account.name] || 0;
+          const amount = currentAllocations[account.name] || 0;
           
           return (
             <Card key={account.id} className={`${style.border} ${style.bg}`}>
@@ -345,7 +415,7 @@ export default function ReserveFunds() {
                   {amount ? formatCurrency(amount) : "0"}
                 </div>
                 <p className={`text-xs ${style.icon}`}>
-                  Đã phân bổ năm {selectedYear}
+                  Đã phân bổ {selectedMonth !== null ? `T${selectedMonth}/${selectedYear}` : `năm ${selectedYear}`}
                 </p>
               </CardContent>
             </Card>
@@ -364,13 +434,13 @@ export default function ReserveFunds() {
                 // Calculate total allocation for all accounts (including marketing)
                 const totalAllocation = allocationAccounts.reduce((sum, account) => {
                   if (account.name === "Cổ tức") return sum; // Exclude dividend
-                  return sum + (yearlyAllocations[account.name] || 0);
+                  return sum + (currentAllocations[account.name] || 0);
                 }, 0);
                 return totalAllocation ? formatCurrency(totalAllocation) : "0";
               })()}
             </div>
             <p className="text-xs text-tea-brown/70">
-              Tổng phân bổ năm {selectedYear}
+              Tổng phân bổ {selectedMonth !== null ? `T${selectedMonth}/${selectedYear}` : `năm ${selectedYear}`}
             </p>
           </CardContent>
         </Card>
@@ -382,8 +452,13 @@ export default function ReserveFunds() {
         <div className="lg:col-span-2">
           <Card>
             <CardHeader>
-              <CardTitle>Tổng chi theo tháng</CardTitle>
-              <p className="text-sm text-gray-600">Chi tiết chi tiêu từ quỹ theo từng tháng năm {selectedYear}</p>
+              <CardTitle>{selectedMonth !== null ? `Chi tiêu tháng ${selectedMonth}/${selectedYear}` : 'Tổng chi theo tháng'}</CardTitle>
+              <p className="text-sm text-gray-600">
+                {selectedMonth !== null 
+                  ? `Chi tiết chi tiêu từ quỹ tháng ${selectedMonth}/${selectedYear}`
+                  : `Chi tiết chi tiêu từ quỹ theo từng tháng năm ${selectedYear}`
+                }
+              </p>
             </CardHeader>
             <CardContent>
               <Table>
@@ -397,26 +472,50 @@ export default function ReserveFunds() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
-                    const monthData = expenditureSummary?.monthlyExpenditure?.[month] || {};
-                    // Only calculate total for filtered accounts (exclude "Cổ tức" and "Marketing")
-                    const monthTotal = filteredAllocationAccounts.reduce((sum, account) => 
-                      sum + (monthData[account.name] || 0), 0);
-                    
-                    return (
-                      <TableRow key={month}>
-                        <TableCell className="font-medium">Tháng {month}</TableCell>
-                        {filteredAllocationAccounts.slice(0, 4).map((account) => (
-                          <TableCell key={account.id} className="text-right">
-                            {monthData[account.name] ? formatCurrency(monthData[account.name]) : "0"}
+                  {selectedMonth !== null ? (
+                    // Show only selected month
+                    (() => {
+                      const monthData = expenditureSummary?.byAccount || {};
+                      const monthTotal = filteredAllocationAccounts.reduce((sum, account) => 
+                        sum + (monthData[account.name] || 0), 0);
+                      
+                      return (
+                        <TableRow>
+                          <TableCell className="font-medium">Tháng {selectedMonth}</TableCell>
+                          {filteredAllocationAccounts.slice(0, 4).map((account) => (
+                            <TableCell key={account.id} className="text-right">
+                              {monthData[account.name] ? formatCurrency(monthData[account.name]) : "0"}
+                            </TableCell>
+                          ))}
+                          <TableCell className="text-right font-semibold">
+                            {monthTotal > 0 ? formatCurrency(monthTotal) : "0"}
                           </TableCell>
-                        ))}
-                        <TableCell className="text-right font-semibold">
-                          {monthTotal > 0 ? formatCurrency(monthTotal) : "0"}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                        </TableRow>
+                      );
+                    })()
+                  ) : (
+                    // Show all months for the year
+                    Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
+                      const monthData = expenditureSummary?.monthlyExpenditure?.[month] || {};
+                      // Only calculate total for filtered accounts (exclude "Cổ tức" and "Marketing")
+                      const monthTotal = filteredAllocationAccounts.reduce((sum, account) => 
+                        sum + (monthData[account.name] || 0), 0);
+                      
+                      return (
+                        <TableRow key={month}>
+                          <TableCell className="font-medium">Tháng {month}</TableCell>
+                          {filteredAllocationAccounts.slice(0, 4).map((account) => (
+                            <TableCell key={account.id} className="text-right">
+                              {monthData[account.name] ? formatCurrency(monthData[account.name]) : "0"}
+                            </TableCell>
+                          ))}
+                          <TableCell className="text-right font-semibold">
+                            {monthTotal > 0 ? formatCurrency(monthTotal) : "0"}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}                
                 </TableBody>
               </Table>
             </CardContent>
@@ -428,7 +527,9 @@ export default function ReserveFunds() {
           <Card>
             <CardHeader>
               <CardTitle>Tổng chi quỹ</CardTitle>
-              <p className="text-sm text-gray-600">Tổng chi tiêu năm {selectedYear}</p>
+              <p className="text-sm text-gray-600">
+                Tổng chi tiêu {selectedMonth !== null ? `T${selectedMonth}/${selectedYear}` : `năm ${selectedYear}`}
+              </p>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -440,7 +541,9 @@ export default function ReserveFunds() {
                       return filteredTotal > 0 ? formatCurrency(filteredTotal) : "0";
                     })()}
                   </div>
-                  <p className="text-sm text-gray-600">Tổng chi trong năm</p>
+                  <p className="text-sm text-gray-600">
+                    Tổng chi {selectedMonth !== null ? 'trong tháng' : 'trong năm'}
+                  </p>
                 </div>
                 
                 <div className="space-y-3">
@@ -467,7 +570,9 @@ export default function ReserveFunds() {
           <Card>
             <CardHeader>
               <CardTitle>Biểu đồ chi tiêu</CardTitle>
-              <p className="text-sm text-gray-600">Tỷ lệ chi tiêu theo loại quỹ</p>
+              <p className="text-sm text-gray-600">
+                Tỷ lệ chi tiêu theo loại quỹ {selectedMonth !== null ? `T${selectedMonth}/${selectedYear}` : `năm ${selectedYear}`}
+              </p>
             </CardHeader>
             <CardContent>
               <ExpenditurePieChart data={(() => {
