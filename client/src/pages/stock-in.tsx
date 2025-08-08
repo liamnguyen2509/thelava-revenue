@@ -54,7 +54,10 @@ export default function StockIn() {
   const stockInTransactions = stockTransactions?.filter(t => t.type === 'in') || [];
 
   // Get unique categories for filter
-  const categories = Array.from(new Set(stockItems?.map(item => item.category) || []));
+  const categories = Array.from(new Set(
+    stockItems?.map(item => item.category)
+      .filter(category => category && category.trim() !== '') || []
+  ));
 
   // Filter transactions based on search and category
   const filteredTransactions = stockInTransactions.filter(transaction => {

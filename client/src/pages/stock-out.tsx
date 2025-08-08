@@ -55,7 +55,10 @@ export default function StockOut() {
   const stockOutTransactions = stockTransactions?.filter(t => t.type === 'out') || [];
 
   // Get unique categories for filter
-  const categories = Array.from(new Set(stockItems?.map(item => item.category) || []));
+  const categories = Array.from(new Set(
+    stockItems?.map(item => item.category)
+      .filter(category => category && category.trim() !== '') || []
+  ));
 
   // Filter transactions based on search and category
   const filteredTransactions = stockOutTransactions.filter(transaction => {

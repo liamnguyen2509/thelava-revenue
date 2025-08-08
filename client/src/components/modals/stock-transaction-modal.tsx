@@ -53,7 +53,7 @@ export default function StockTransactionModal({
   const form = useForm<InsertStockTransaction>({
     resolver: zodResolver(insertStockTransactionSchema),
     defaultValues: {
-      itemId: "",
+      itemId: undefined,
       type: transactionType,
       quantity: "0",
       unitPrice: "0",
@@ -139,7 +139,7 @@ export default function StockTransactionModal({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Hàng hóa</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select value={field.value || ""} onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Chọn hàng hóa" />
