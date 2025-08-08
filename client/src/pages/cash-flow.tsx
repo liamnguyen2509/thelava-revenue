@@ -62,6 +62,12 @@ export default function CashFlow() {
     return Math.round(amount).toLocaleString('vi-VN').replace(/,/g, '.') + " " + currency;
   };
 
+  // Helper function to get percentage for allocation account
+  const getAccountPercentage = (accountName: string) => {
+    const account = allocationAccounts.find(acc => acc.name === accountName);
+    return Number(account?.percentage || 0);
+  };
+
   const getDaysInMonth = (month: number, year: number) => {
     return new Date(year, month, 0).getDate();
   };
@@ -313,12 +319,24 @@ export default function CashFlow() {
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Tháng</th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Tái đầu tư</th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Khấu hao</th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Dự phòng RR</th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Thưởng NV</th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Cổ tức</th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Marketing</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">
+                    Tái đầu tư ({getAccountPercentage("Tái đầu tư")}%)
+                  </th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">
+                    Khấu hao ({getAccountPercentage("Khấu hao")}%)
+                  </th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">
+                    Dự phòng RR ({getAccountPercentage("Dự phòng rủi ro")}%)
+                  </th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">
+                    Thưởng NV ({getAccountPercentage("Thưởng nhân viên")}%)
+                  </th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">
+                    Cổ tức ({getAccountPercentage("Cổ tức")}%)
+                  </th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">
+                    Marketing ({getAccountPercentage("Marketing")}%)
+                  </th>
                 </tr>
               </thead>
               <tbody>
