@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,6 +48,8 @@ import {
   Trash2,
   Printer,
   FileSpreadsheet,
+  ChevronDown,
+  ChevronRight as ChevronRightIcon,
 } from "lucide-react";
 import type { StockItem, StockTransaction } from "@shared/schema";
 
@@ -61,7 +63,36 @@ export default function StockIn() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deleteTransactionId, setDeleteTransactionId] = useState<string | null>(null);
   const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const { formatMoney, formatDisplayDate } = useFormattedData();
+
+  // Vietnamese number formatting for mobile
+  const formatNumberToVietnamese = (amount: number) => {
+    const absAmount = Math.abs(amount);
+    if (absAmount >= 1000000) {
+      const millions = amount / 1000000;
+      return `${millions.toFixed(millions % 1 === 0 ? 0 : 1)} triệu`;
+    } else if (absAmount >= 1000) {
+      const thousands = amount / 1000;
+      return `${thousands.toFixed(thousands % 1 === 0 ? 0 : 1)} nghìn`;
+    } else {
+      return Math.round(amount).toString();
+    }
+  };
+
+  const formatMobileAmount = (amount: number) => {
+    return formatNumberToVietnamese(amount);
+  };
+
+  const toggleRowExpansion = (transactionId: string) => {
+    const newExpanded = new Set(expandedRows);
+    if (newExpanded.has(transactionId)) {
+      newExpanded.delete(transactionId);
+    } else {
+      newExpanded.add(transactionId);
+    }
+    setExpandedRows(newExpanded);
+  };
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -527,13 +558,14 @@ export default function StockIn() {
                         onCheckedChange={toggleSelectAll}
                       />
                     </th>
-                    <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4">Ngày nhập</th>
+                    <th className="text-center py-3 px-2 w-8 md:hidden"></th>
+                    <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden md:table-cell">Ngày nhập</th>
                     <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4">Hàng hóa</th>
                     <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4">Số lượng</th>
                     <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden md:table-cell">Giá đơn vị</th>
-                    <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4">Tổng tiền</th>
-                    <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden lg:table-cell">Ghi chú</th>
-                    <th className="text-center text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4">Thao tác</th>
+                    <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden md:table-cell">Tổng tiền</th>
+                    <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden md:table-cell">Ghi chú</th>
+                    <th className="text-center text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden md:table-cell">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody>

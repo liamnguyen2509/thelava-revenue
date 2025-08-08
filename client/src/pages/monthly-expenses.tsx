@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,7 +36,7 @@ import {
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Plus, Edit, Trash2, Calendar, DollarSign, ChevronLeft, ChevronRight, CalendarIcon } from "lucide-react";
+import { Plus, Edit, Trash2, Calendar, DollarSign, ChevronLeft, ChevronRight, CalendarIcon, ChevronDown, ChevronRight as ChevronRightIcon } from "lucide-react";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -67,6 +67,7 @@ export default function MonthlyExpenses() {
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [selectedExpenses, setSelectedExpenses] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteMultipleDialogOpen, setDeleteMultipleDialogOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<string | null>(null);
@@ -111,6 +112,34 @@ export default function MonthlyExpenses() {
   const getCurrency = () => {
     const currencySetting = systemSettings.find(s => s.key === "currency");
     return currencySetting?.value || "VNĐ";
+  };
+
+  // Vietnamese number formatting for mobile
+  const formatNumberToVietnamese = (amount: number) => {
+    const absAmount = Math.abs(amount);
+    if (absAmount >= 1000000) {
+      const millions = amount / 1000000;
+      return `${millions.toFixed(millions % 1 === 0 ? 0 : 1)} triệu`;
+    } else if (absAmount >= 1000) {
+      const thousands = amount / 1000;
+      return `${thousands.toFixed(thousands % 1 === 0 ? 0 : 1)} nghìn`;
+    } else {
+      return Math.round(amount).toString();
+    }
+  };
+
+  const formatMobileAmount = (amount: number) => {
+    return formatNumberToVietnamese(amount);
+  };
+
+  const toggleRowExpansion = (expenseId: string) => {
+    const newExpanded = new Set(expandedRows);
+    if (newExpanded.has(expenseId)) {
+      newExpanded.delete(expenseId);
+    } else {
+      newExpanded.add(expenseId);
+    }
+    setExpandedRows(newExpanded);
   };
 
   // Reset current page when year/month changes
@@ -517,19 +546,20 @@ export default function MonthlyExpenses() {
             <table className="min-w-full">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-2 sm:px-4 sticky left-0 bg-white z-10">
+                  <th className="text-left py-3 px-2 sm:px-4 sticky left-0 bg-white z-10 w-12">
                     <Checkbox
                       checked={selectedExpenses.length === filteredExpenses.length && filteredExpenses.length > 0}
                       onCheckedChange={toggleSelectAll}
                     />
                   </th>
-                  <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4">STT</th>
+                  <th className="text-center py-3 px-2 w-8 md:hidden"></th>
+                  <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden md:table-cell">STT</th>
                   <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4">Khoản Chi</th>
-                  <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden sm:table-cell">Loại chi</th>
+                  <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden md:table-cell">Loại chi</th>
                   <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4">Số tiền</th>
                   <th className="text-center text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden md:table-cell">Ngày chi</th>
-                  <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden lg:table-cell">Ghi chú</th>
-                  <th className="text-center text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4">Thao tác</th>
+                  <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden md:table-cell">Ghi chú</th>
+                  <th className="text-center text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden md:table-cell">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
@@ -540,69 +570,151 @@ export default function MonthlyExpenses() {
                     </td>
                   </tr>
                 ) : (
-                  filteredExpenses.map((expense: Expense, index: number) => (
-                    <tr key={expense.id} className="border-b border-gray-50 hover:bg-gray-50">
-                      <td className="py-4 px-2 sm:px-4 sticky left-0 bg-white">
-                        <Checkbox
-                          checked={selectedExpenses.includes(expense.id)}
-                          onCheckedChange={() => toggleSelectExpense(expense.id)}
-                        />
-                      </td>
-                      <td className="py-4 px-2 sm:px-4 text-sm text-gray-900">{index + 1}</td>
-                      <td className="py-4 px-2 sm:px-4 text-sm font-medium text-gray-900">
-                        <div className="truncate max-w-[120px] sm:max-w-none" title={expense.name}>
-                          {expense.name}
-                        </div>
-                        <div className="sm:hidden text-xs text-gray-500 mt-1">
-                          {expense.category === 'staff_salary' ? 'Lương nhân viên' : 
-                           expense.category === 'ingredients' ? 'Nguyên liệu' :
-                           expense.category === 'fixed' ? 'Chi phí cố định' :
-                           expense.category === 'additional' ? 'Chi phí phát sinh' : 
-                           expense.category}
-                        </div>
-                      </td>
-                      <td className="py-4 px-2 sm:px-4 text-sm text-gray-600 hidden sm:table-cell">
-                        {expense.category === 'staff_salary' ? 'Lương nhân viên' : 
-                         expense.category === 'ingredients' ? 'Nguyên liệu' :
-                         expense.category === 'fixed' ? 'Chi phí cố định' :
-                         expense.category === 'additional' ? 'Chi phí phát sinh' : 
-                         expense.category}
-                      </td>
-                      <td className="py-4 px-2 sm:px-4 text-sm text-gray-900 text-right font-medium">
-                        <div className="truncate">{formatCurrency(parseFloat(expense.amount))}</div>
-                        <div className="md:hidden text-xs text-gray-500 mt-1">
-                          {formatDate(expense.expenseDate)}
-                        </div>
-                      </td>
-                      <td className="py-4 px-2 sm:px-4 text-sm text-gray-600 text-center hidden md:table-cell">
-                        {formatDate(expense.expenseDate)}
-                      </td>
-                      <td className="py-4 px-2 sm:px-4 text-sm text-gray-600 max-w-xs truncate hidden lg:table-cell">
-                        {expense.notes || "-"}
-                      </td>
-                      <td className="py-4 px-2 sm:px-4 text-center">
-                        <div className="flex justify-center gap-1 sm:gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEdit(expense)}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(expense.id)}
-                            className="h-8 w-8 p-0 text-red-600 hover:text-red-800"
-                            disabled={deleteMutation.isPending}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                  filteredExpenses.map((expense: Expense, index: number) => {
+                    const isExpanded = expandedRows.has(expense.id);
+                    
+                    return (
+                      <React.Fragment key={expense.id}>
+                        <tr className="border-b border-gray-50 hover:bg-gray-50">
+                          <td className="py-4 px-2 sm:px-4 sticky left-0 bg-white">
+                            <Checkbox
+                              checked={selectedExpenses.includes(expense.id)}
+                              onCheckedChange={() => toggleSelectExpense(expense.id)}
+                            />
+                          </td>
+                          
+                          {/* Mobile Expand Button */}
+                          <td className="py-4 px-2 text-center md:hidden">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => toggleRowExpansion(expense.id)}
+                              className="h-8 w-8 p-0 hover:bg-gray-100"
+                            >
+                              {isExpanded ? (
+                                <ChevronDown className="h-4 w-4" />
+                              ) : (
+                                <ChevronRightIcon className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </td>
+                          
+                          {/* STT - Hidden on mobile */}
+                          <td className="py-4 px-2 sm:px-4 text-sm text-gray-900 hidden md:table-cell">{index + 1}</td>
+                          
+                          {/* Expense Name */}
+                          <td className="py-4 px-2 sm:px-4 text-sm font-medium text-gray-900">
+                            <div className="truncate max-w-[120px] sm:max-w-none" title={expense.name}>
+                              {expense.name}
+                            </div>
+                          </td>
+                          
+                          {/* Category - Hidden on mobile */}
+                          <td className="py-4 px-2 sm:px-4 text-sm text-gray-600 hidden md:table-cell">
+                            {expense.category === 'staff_salary' ? 'Lương nhân viên' : 
+                             expense.category === 'ingredients' ? 'Nguyên liệu' :
+                             expense.category === 'fixed' ? 'Chi phí cố định' :
+                             expense.category === 'additional' ? 'Chi phí phát sinh' : 
+                             expense.category}
+                          </td>
+                          
+                          {/* Amount */}
+                          <td className="py-4 px-2 sm:px-4 text-sm text-gray-900 text-right font-medium">
+                            <div className="truncate">
+                              <span className="md:hidden">{formatMobileAmount(parseFloat(expense.amount))}</span>
+                              <span className="hidden md:inline">{formatCurrency(parseFloat(expense.amount))}</span>
+                            </div>
+                          </td>
+                          
+                          {/* Date - Hidden on mobile */}
+                          <td className="py-4 px-2 sm:px-4 text-sm text-gray-600 text-center hidden md:table-cell">
+                            {formatDate(expense.expenseDate)}
+                          </td>
+                          
+                          {/* Notes - Hidden on mobile */}
+                          <td className="py-4 px-2 sm:px-4 text-sm text-gray-600 max-w-xs truncate hidden md:table-cell">
+                            {expense.notes || "-"}
+                          </td>
+                          
+                          {/* Actions - Hidden on mobile */}
+                          <td className="py-4 px-2 sm:px-4 text-center hidden md:table-cell">
+                            <div className="flex justify-center gap-1 sm:gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEdit(expense)}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDelete(expense.id)}
+                                className="h-8 w-8 p-0 text-red-600 hover:text-red-800"
+                                disabled={deleteMutation.isPending}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                        
+                        {/* Expandable Row Details for Mobile */}
+                        {isExpanded && (
+                          <tr className="md:hidden border-b border-gray-50 bg-gray-50">
+                            <td colSpan={4} className="px-4 py-3">
+                              <div className="space-y-2 text-sm">
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">STT:</span>
+                                  <span className="font-medium">{index + 1}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Loại chi:</span>
+                                  <span className="font-medium">
+                                    {expense.category === 'staff_salary' ? 'Lương nhân viên' : 
+                                     expense.category === 'ingredients' ? 'Nguyên liệu' :
+                                     expense.category === 'fixed' ? 'Chi phí cố định' :
+                                     expense.category === 'additional' ? 'Chi phí phát sinh' : 
+                                     expense.category}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Ngày chi:</span>
+                                  <span className="font-medium">{formatDate(expense.expenseDate)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Ghi chú:</span>
+                                  <span className="font-medium">{expense.notes || "-"}</span>
+                                </div>
+                                <div className="flex gap-2 pt-2 justify-end border-t border-gray-200">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleEdit(expense)}
+                                    className="h-8"
+                                  >
+                                    <Edit className="h-4 w-4 mr-1" />
+                                    Sửa
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleDelete(expense.id)}
+                                    className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    disabled={deleteMutation.isPending}
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-1" />
+                                    Xóa
+                                  </Button>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })
                 )}
               </tbody>
             </table>

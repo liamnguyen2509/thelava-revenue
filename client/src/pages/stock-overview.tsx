@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,8 @@ import {
   Edit,
   Trash2,
   History,
+  ChevronDown,
+  ChevronRight as ChevronRightIcon,
 } from "lucide-react";
 import type { StockItem } from "@shared/schema";
 
@@ -56,7 +58,36 @@ export default function StockOverview() {
   const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
   const [isPriceHistoryModalOpen, setIsPriceHistoryModalOpen] = useState(false);
   const [priceHistoryItem, setPriceHistoryItem] = useState<StockItem | null>(null);
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const { formatMoney } = useFormattedData();
+
+  // Vietnamese number formatting for mobile
+  const formatNumberToVietnamese = (amount: number) => {
+    const absAmount = Math.abs(amount);
+    if (absAmount >= 1000000) {
+      const millions = amount / 1000000;
+      return `${millions.toFixed(millions % 1 === 0 ? 0 : 1)} triệu`;
+    } else if (absAmount >= 1000) {
+      const thousands = amount / 1000;
+      return `${thousands.toFixed(thousands % 1 === 0 ? 0 : 1)} nghìn`;
+    } else {
+      return Math.round(amount).toString();
+    }
+  };
+
+  const formatMobileAmount = (amount: number) => {
+    return formatNumberToVietnamese(amount);
+  };
+
+  const toggleRowExpansion = (itemId: string) => {
+    const newExpanded = new Set(expandedRows);
+    if (newExpanded.has(itemId)) {
+      newExpanded.delete(itemId);
+    } else {
+      newExpanded.add(itemId);
+    }
+    setExpandedRows(newExpanded);
+  };
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -301,99 +332,188 @@ export default function StockOverview() {
                         onCheckedChange={toggleSelectAll}
                       />
                     </th>
+                    <th className="text-center py-3 px-2 w-8 md:hidden"></th>
                     <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4">Tên hàng hóa</th>
-                    <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden sm:table-cell">Đơn vị</th>
-                    <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4">Giá thành</th>
+                    <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden md:table-cell">Đơn vị</th>
+                    <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden md:table-cell">Giá thành</th>
                     <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden md:table-cell">Nhập kho</th>
                     <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden md:table-cell">Xuất kho</th>
                     <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4">Tồn kho</th>
-                    <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden lg:table-cell">Trạng thái</th>
-                    <th className="text-center text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4">Thao tác</th>
+                    <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden md:table-cell">Trạng thái</th>
+                    <th className="text-center text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden md:table-cell">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {stockItems.map((item) => (
-                    <tr key={item.id} className="border-b border-gray-50 hover:bg-gray-50">
-                      <td className="py-4 px-2 sm:px-4 sticky left-0 bg-white">
-                        <Checkbox 
-                          checked={selectedItems.includes(item.id)}
-                          onCheckedChange={() => toggleSelectItem(item.id)}
-                        />
-                      </td>
-                      <td className="py-4 px-2 sm:px-4 font-medium text-gray-900">
-                        <div className="truncate max-w-[120px] sm:max-w-none" title={item.name}>
-                          {item.name}
-                        </div>
-                        <div className="sm:hidden text-xs text-gray-500 mt-1">
-                          {item.unit}
-                        </div>
-                        <div className="lg:hidden text-xs mt-1">
-                          {getStatusBadge(item)}
-                        </div>
-                      </td>
-                      <td className="py-4 px-2 sm:px-4 text-sm text-gray-600 hidden sm:table-cell">
-                        {item.unit}
-                      </td>
-                      <td className="py-4 px-2 sm:px-4 text-right">
-                        <Button
-                          variant="ghost"
-                          className="h-auto p-1 text-right hover:bg-blue-50 hover:text-blue-600"
-                          onClick={() => handleViewPriceHistory(item)}
-                        >
-                          <div className="flex items-center gap-1">
-                            <span className="font-medium text-sm">
-                              {formatMoney(parseFloat(item.unitPrice || '0'))}
+                  {stockItems.map((item) => {
+                    const isExpanded = expandedRows.has(item.id);
+                    
+                    return (
+                      <React.Fragment key={item.id}>
+                        <tr className="border-b border-gray-50 hover:bg-gray-50">
+                          <td className="py-4 px-2 sm:px-4 sticky left-0 bg-white">
+                            <Checkbox 
+                              checked={selectedItems.includes(item.id)}
+                              onCheckedChange={() => toggleSelectItem(item.id)}
+                            />
+                          </td>
+                          
+                          {/* Mobile Expand Button */}
+                          <td className="py-4 px-2 text-center md:hidden">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => toggleRowExpansion(item.id)}
+                              className="h-8 w-8 p-0 hover:bg-gray-100"
+                            >
+                              {isExpanded ? (
+                                <ChevronDown className="h-4 w-4" />
+                              ) : (
+                                <ChevronRightIcon className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </td>
+                          
+                          {/* Item Name */}
+                          <td className="py-4 px-2 sm:px-4 font-medium text-gray-900">
+                            <div className="truncate max-w-[120px] sm:max-w-none" title={item.name}>
+                              {item.name}
+                            </div>
+                          </td>
+                          
+                          {/* Unit - Hidden on mobile */}
+                          <td className="py-4 px-2 sm:px-4 text-sm text-gray-600 hidden md:table-cell">
+                            {item.unit}
+                          </td>
+                          
+                          {/* Price - Hidden on mobile */}
+                          <td className="py-4 px-2 sm:px-4 text-right hidden md:table-cell">
+                            <Button
+                              variant="ghost"
+                              className="h-auto p-1 text-right hover:bg-blue-50 hover:text-blue-600"
+                              onClick={() => handleViewPriceHistory(item)}
+                            >
+                              <div className="flex items-center gap-1">
+                                <span className="font-medium text-sm">
+                                  {formatMoney(parseFloat(item.unitPrice || '0'))}
+                                </span>
+                                <History className="h-3 w-3 opacity-60" />
+                              </div>
+                            </Button>
+                          </td>
+                          
+                          {/* Stock In - Hidden on mobile */}
+                          <td className="py-4 px-2 sm:px-4 text-right hidden md:table-cell">
+                            <span className="text-green-600 font-medium text-sm">
+                              {formatMobileAmount(item.totalIn || 0)}
                             </span>
-                            <History className="h-3 w-3 opacity-60" />
-                          </div>
-                        </Button>
-                        <div className="md:hidden text-xs text-gray-500 mt-1">
-                          <div className="flex justify-between">
-                            <span className="text-green-600">Nhập: {(item.totalIn || 0).toLocaleString('vi-VN')}</span>
-                            <span className="text-red-600">Xuất: {(item.totalOut || 0).toLocaleString('vi-VN')}</span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-4 px-2 sm:px-4 text-right hidden md:table-cell">
-                        <span className="text-green-600 font-medium text-sm">
-                          {(item.totalIn || 0).toLocaleString('vi-VN')}
-                        </span>
-                      </td>
-                      <td className="py-4 px-2 sm:px-4 text-right hidden md:table-cell">
-                        <span className="text-red-600 font-medium text-sm">
-                          {(item.totalOut || 0).toLocaleString('vi-VN')}
-                        </span>
-                      </td>
-                      <td className="py-4 px-2 sm:px-4 text-right text-sm font-medium text-gray-900">
-                        <div className="truncate">
-                          {parseFloat(item.currentStock).toLocaleString('vi-VN')}
-                        </div>
-                      </td>
-                      <td className="py-4 px-2 sm:px-4 hidden lg:table-cell">
-                        {getStatusBadge(item)}
-                      </td>
-                      <td className="py-4 px-2 sm:px-4 text-center">
-                        <div className="flex gap-1 sm:gap-2 justify-center">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEdit(item)}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleDelete(item.id)}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                          </td>
+                          
+                          {/* Stock Out - Hidden on mobile */}
+                          <td className="py-4 px-2 sm:px-4 text-right hidden md:table-cell">
+                            <span className="text-red-600 font-medium text-sm">
+                              {formatMobileAmount(item.totalOut || 0)}
+                            </span>
+                          </td>
+                          
+                          {/* Current Stock */}
+                          <td className="py-4 px-2 sm:px-4 text-right text-sm font-medium text-gray-900">
+                            <div className="truncate">
+                              <span className="md:hidden">{formatMobileAmount(parseFloat(item.currentStock))}</span>
+                              <span className="hidden md:inline">{parseFloat(item.currentStock).toLocaleString('vi-VN')}</span>
+                            </div>
+                          </td>
+                          
+                          {/* Status - Hidden on mobile */}
+                          <td className="py-4 px-2 sm:px-4 hidden md:table-cell">
+                            {getStatusBadge(item)}
+                          </td>
+                          
+                          {/* Actions - Hidden on mobile */}
+                          <td className="py-4 px-2 sm:px-4 text-center hidden md:table-cell">
+                            <div className="flex gap-1 sm:gap-2 justify-center">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEdit(item)}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleDelete(item.id)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                        
+                        {/* Expandable Row Details for Mobile */}
+                        {isExpanded && (
+                          <tr className="md:hidden border-b border-gray-50 bg-gray-50">
+                            <td colSpan={4} className="px-4 py-3">
+                              <div className="space-y-2 text-sm">
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Đơn vị:</span>
+                                  <span className="font-medium">{item.unit}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Giá thành:</span>
+                                  <Button
+                                    variant="ghost"
+                                    className="h-auto p-0 text-right hover:bg-blue-50 hover:text-blue-600"
+                                    onClick={() => handleViewPriceHistory(item)}
+                                  >
+                                    <div className="flex items-center gap-1">
+                                      <span className="font-medium text-sm">
+                                        {formatMobileAmount(parseFloat(item.unitPrice || '0'))}
+                                      </span>
+                                      <History className="h-3 w-3 opacity-60" />
+                                    </div>
+                                  </Button>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Nhập kho:</span>
+                                  <span className="font-medium text-green-600">{formatMobileAmount(item.totalIn || 0)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Xuất kho:</span>
+                                  <span className="font-medium text-red-600">{formatMobileAmount(item.totalOut || 0)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Trạng thái:</span>
+                                  <span className="font-medium">{getStatusBadge(item)}</span>
+                                </div>
+                                <div className="flex gap-2 pt-2 justify-end border-t border-gray-200">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleEdit(item)}
+                                    className="h-8"
+                                  >
+                                    <Edit className="h-4 w-4 mr-1" />
+                                    Sửa
+                                  </Button>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => handleDelete(item.id)}
+                                    className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-1" />
+                                    Xóa
+                                  </Button>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
