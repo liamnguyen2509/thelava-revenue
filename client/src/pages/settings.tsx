@@ -399,7 +399,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Tab Content */}
-        <div className="px-4 sm:px-6 pt-8 md:pt-6">
+        <div className="px-4 sm:px-6 pt-12 md:pt-6">
           <TabsContent value="general" className="mt-0">
             <Card>
             <CardHeader>
@@ -644,7 +644,7 @@ export default function SettingsPage() {
           </TabsContent>
 
           {/* Branches */}
-          <TabsContent value="branches" className="mt-0">
+          <TabsContent value="branches" className="mt-0 pt-4 md:pt-0">
             <Card>
             <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
