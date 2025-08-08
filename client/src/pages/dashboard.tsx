@@ -92,6 +92,25 @@ export default function Dashboard() {
   // Calculate current monthly net profit for allocation calculations
   const currentMonthlyProfit = ((revenueSummary as any)?.monthly || 0) - ((expenseSummary as any)?.monthly || 0);
 
+  // Helper function to format percentage change
+  const formatPercentageChange = (percentage: number) => {
+    const isPositive = percentage > 0;
+    const isNegative = percentage < 0;
+    const Icon = isNegative ? TrendingDown : TrendingUp;
+    const colorClass = isNegative ? 'text-red-600' : 'text-green-600';
+    const sign = isPositive ? '+' : '';
+    
+    return {
+      text: `${sign}${percentage.toFixed(1)}%`,
+      colorClass,
+      Icon
+    };
+  };
+
+  // Calculate profit growth (simplified calculation)
+  const lastMonthProfit = currentMonthlyProfit * (1 - (((revenueSummary as any)?.monthlyGrowth || 0) - ((expenseSummary as any)?.monthlyGrowth || 0)) / 100);
+  const profitGrowth = lastMonthProfit !== 0 ? ((currentMonthlyProfit - lastMonthProfit) / Math.abs(lastMonthProfit)) * 100 : 0;
+
   // Calculate allocation amount for each account
   const calculateAllocationAmount = (accountName: string) => {
     const percentage = getAccountPercentage(accountName);
@@ -172,10 +191,15 @@ export default function Dashboard() {
                 <p className="text-2xl font-bold text-gray-900 mt-2">
                   {formatMoney((revenueSummary as any)?.annual || 0)}
                 </p>
-                <p className="text-sm text-green-600 mt-1">
-                  <TrendingUp className="inline w-4 h-4 mr-1" />
-                  +12.5% so với năm trước
-                </p>
+                {(() => {
+                  const change = formatPercentageChange((revenueSummary as any)?.annualGrowth || 0);
+                  return (
+                    <p className={`text-sm mt-1 ${change.colorClass}`}>
+                      <change.Icon className="inline w-4 h-4 mr-1" />
+                      {change.text} so với năm trước
+                    </p>
+                  );
+                })()}
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                 <TrendingUp className="text-green-600 w-6 h-6" />
@@ -193,10 +217,15 @@ export default function Dashboard() {
                 <p className="text-2xl font-bold text-gray-900 mt-2">
                   {formatMoney((revenueSummary as any)?.monthly || 0)}
                 </p>
-                <p className="text-sm text-green-600 mt-1">
-                  <TrendingUp className="inline w-4 h-4 mr-1" />
-                  +8.2% so với tháng trước
-                </p>
+                {(() => {
+                  const change = formatPercentageChange((revenueSummary as any)?.monthlyGrowth || 0);
+                  return (
+                    <p className={`text-sm mt-1 ${change.colorClass}`}>
+                      <change.Icon className="inline w-4 h-4 mr-1" />
+                      {change.text} so với tháng trước
+                    </p>
+                  );
+                })()}
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <Calendar className="text-blue-600 w-6 h-6" />
@@ -214,10 +243,15 @@ export default function Dashboard() {
                 <p className="text-2xl font-bold text-gray-900 mt-2">
                   {formatMoney((expenseSummary as any)?.monthly || 0)}
                 </p>
-                <p className="text-sm text-orange-600 mt-1">
-                  <TrendingUp className="inline w-4 h-4 mr-1" />
-                  +3.1% so với tháng trước
-                </p>
+                {(() => {
+                  const change = formatPercentageChange((expenseSummary as any)?.monthlyGrowth || 0);
+                  return (
+                    <p className={`text-sm mt-1 ${change.colorClass}`}>
+                      <change.Icon className="inline w-4 h-4 mr-1" />
+                      {change.text} so với tháng trước
+                    </p>
+                  );
+                })()}
               </div>
               <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
                 <CreditCard className="text-orange-600 w-6 h-6" />
@@ -235,10 +269,15 @@ export default function Dashboard() {
                 <p className="text-2xl font-bold text-gray-900 mt-2">
                   {formatMoney(currentMonthlyProfit)}
                 </p>
-                <p className="text-sm text-green-600 mt-1">
-                  <TrendingUp className="inline w-4 h-4 mr-1" />
-                  +15.7% so với tháng trước
-                </p>
+                {(() => {
+                  const change = formatPercentageChange(profitGrowth);
+                  return (
+                    <p className={`text-sm mt-1 ${change.colorClass}`}>
+                      <change.Icon className="inline w-4 h-4 mr-1" />
+                      {change.text} so với tháng trước
+                    </p>
+                  );
+                })()}
               </div>
               <div className="w-12 h-12 bg-tea-cream rounded-lg flex items-center justify-center">
                 <Trophy className="text-tea-brown w-6 h-6" />

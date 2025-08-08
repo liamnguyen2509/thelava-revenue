@@ -122,33 +122,60 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getRevenueSummary(): Promise<{ annual: number; monthly: number }> {
+  async getRevenueSummary(): Promise<{ 
+    annual: number; 
+    monthly: number;
+    annualGrowth: number;
+    monthlyGrowth: number;
+  }> {
     const currentYear = new Date().getFullYear();
     const currentMonth = new Date().getMonth() + 1;
+    const lastYear = currentYear - 1;
+    const lastMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+    const lastMonthYear = currentMonth === 1 ? currentYear - 1 : currentYear;
     
     try {
-      // Get all revenues for current year (sum of all monthly revenues in cash flow)
+      // Get current year data
       const annualRevenues = await db.select().from(revenues).where(eq(revenues.year, currentYear));
       const monthlyRevenues = await db.select().from(revenues)
         .where(and(eq(revenues.year, currentYear), eq(revenues.month, currentMonth)));
       
-      // Calculate annual total from all monthly entries in cash flow page
+      // Get last year data for comparison
+      const lastYearRevenues = await db.select().from(revenues).where(eq(revenues.year, lastYear));
+      const lastMonthRevenues = await db.select().from(revenues)
+        .where(and(eq(revenues.year, lastMonthYear), eq(revenues.month, lastMonth)));
+      
+      // Calculate current totals
       const annual = annualRevenues.reduce((sum: number, r: Revenue) => {
         const amount = parseFloat(r.amount) || 0;
         return sum + amount;
       }, 0);
       
-      // Calculate current month total
       const monthly = monthlyRevenues.reduce((sum: number, r: Revenue) => {
         const amount = parseFloat(r.amount) || 0;
         return sum + amount;
       }, 0);
       
+      // Calculate comparison totals
+      const lastYearTotal = lastYearRevenues.reduce((sum: number, r: Revenue) => {
+        const amount = parseFloat(r.amount) || 0;
+        return sum + amount;
+      }, 0);
+      
+      const lastMonthTotal = lastMonthRevenues.reduce((sum: number, r: Revenue) => {
+        const amount = parseFloat(r.amount) || 0;
+        return sum + amount;
+      }, 0);
+      
+      // Calculate growth percentages
+      const annualGrowth = lastYearTotal > 0 ? ((annual - lastYearTotal) / lastYearTotal) * 100 : 0;
+      const monthlyGrowth = lastMonthTotal > 0 ? ((monthly - lastMonthTotal) / lastMonthTotal) * 100 : 0;
+      
       console.log(`Revenue summary - Annual: ${annual}, Monthly: ${monthly}`);
-      return { annual, monthly };
+      return { annual, monthly, annualGrowth, monthlyGrowth };
     } catch (error) {
       console.error('Error getting revenue summary:', error);
-      return { annual: 0, monthly: 0 };
+      return { annual: 0, monthly: 0, annualGrowth: 0, monthlyGrowth: 0 };
     }
   }
 
@@ -181,24 +208,39 @@ export class DatabaseStorage implements IStorage {
     await db.delete(expenses).where(eq(expenses.id, id));
   }
 
-  async getExpenseSummary(): Promise<{ monthly: number }> {
+  async getExpenseSummary(): Promise<{ monthly: number; monthlyGrowth: number }> {
     const currentYear = new Date().getFullYear();
     const currentMonth = new Date().getMonth() + 1;
+    const lastMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+    const lastMonthYear = currentMonth === 1 ? currentYear - 1 : currentYear;
     
     try {
+      // Get current month expenses
       const monthlyExpenses = await db.select().from(expenses)
         .where(and(eq(expenses.year, currentYear), eq(expenses.month, currentMonth)));
+      
+      // Get last month expenses for comparison
+      const lastMonthExpenses = await db.select().from(expenses)
+        .where(and(eq(expenses.year, lastMonthYear), eq(expenses.month, lastMonth)));
       
       const monthly = monthlyExpenses.reduce((sum: number, e: Expense) => {
         const amount = parseFloat(e.amount) || 0;
         return sum + amount;
       }, 0);
       
+      const lastMonthTotal = lastMonthExpenses.reduce((sum: number, e: Expense) => {
+        const amount = parseFloat(e.amount) || 0;
+        return sum + amount;
+      }, 0);
+      
+      // Calculate growth percentage
+      const monthlyGrowth = lastMonthTotal > 0 ? ((monthly - lastMonthTotal) / lastMonthTotal) * 100 : 0;
+      
       console.log(`Expense summary - Monthly: ${monthly}`);
-      return { monthly };
+      return { monthly, monthlyGrowth };
     } catch (error) {
       console.error('Error getting expense summary:', error);
-      return { monthly: 0 };
+      return { monthly: 0, monthlyGrowth: 0 };
     }
   }
 
