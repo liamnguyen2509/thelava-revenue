@@ -120,6 +120,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Summary route must come before parameterized routes
+  app.get("/api/revenues/summary", requireAuth, async (req, res) => {
+    try {
+      console.log('Calling revenue summary API...');
+      const summary = await storage.getRevenueSummary();
+      console.log('Revenue summary result:', summary);
+      res.json(summary);
+    } catch (error) {
+      console.error('Revenue summary API error:', error);
+      res.status(500).json({ message: "Lỗi khi lấy tổng quan doanh thu" });
+    }
+  });
+
   app.get("/api/revenues/:year", requireAuth, async (req, res) => {
     try {
       const year = parseInt(req.params.year);
@@ -127,15 +140,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(revenues);
     } catch (error) {
       res.status(500).json({ message: "Lỗi khi lấy dữ liệu doanh thu" });
-    }
-  });
-
-  app.get("/api/revenues/summary", requireAuth, async (req, res) => {
-    try {
-      const summary = await storage.getRevenueSummary();
-      res.json(summary);
-    } catch (error) {
-      res.status(500).json({ message: "Lỗi khi lấy tổng quan doanh thu" });
     }
   });
 
