@@ -380,16 +380,69 @@ export default function ReserveFunds() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Quỹ dự trữ</h1>
-          <p className="text-gray-600 text-sm sm:text-base">Quản lý quỹ dự trữ</p>
+      {/* Page Title */}
+      <div className="mb-4">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Quỹ dự trữ</h1>
+        <p className="text-gray-600 text-sm sm:text-base">Quản lý quỹ dự trữ</p>
+      </div>
+
+      {/* Mobile Layout: Filters and Add Button */}
+      <div className="md:hidden space-y-4 mb-6">
+        {/* Filters Row */}
+        <div className="flex gap-4">
+          <div className="flex-1">
+            <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {years.map((year) => (
+                  <SelectItem key={year} value={year.toString()}>
+                    {year}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex-1">
+            <Select 
+              value={selectedMonth?.toString() || "all"} 
+              onValueChange={(value) => setSelectedMonth(value === "all" ? null : parseInt(value))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Tất cả" />
+              </SelectTrigger>
+              <SelectContent>
+                {months.map((month) => (
+                  <SelectItem key={month.value.toString()} value={month.value.toString()}>
+                    {month.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+        
+        {/* Add Button */}
+        <Button 
+          onClick={() => {
+            setSelectedExpenditure(null);
+            setIsExpenditureModalOpen(true);
+          }}
+          className="bg-tea-brown hover:bg-tea-brown/90 w-full"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Thêm khoản chi
+        </Button>
+      </div>
+
+      {/* Desktop Layout: Same as before */}
+      <div className="hidden md:flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
             <Label htmlFor="year" className="text-sm">Năm:</Label>
             <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
-              <SelectTrigger className="w-28 sm:w-32">
+              <SelectTrigger className="w-32">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -407,7 +460,7 @@ export default function ReserveFunds() {
               value={selectedMonth?.toString() || "all"} 
               onValueChange={(value) => setSelectedMonth(value === "all" ? null : parseInt(value))}
             >
-              <SelectTrigger className="w-28 sm:w-32">
+              <SelectTrigger className="w-32">
                 <SelectValue placeholder="Tất cả" />
               </SelectTrigger>
               <SelectContent>
@@ -419,17 +472,17 @@ export default function ReserveFunds() {
               </SelectContent>
             </Select>
           </div>
-          <Button 
-            onClick={() => {
-              setSelectedExpenditure(null);
-              setIsExpenditureModalOpen(true);
-            }}
-            className="bg-tea-brown hover:bg-tea-brown/90 w-full sm:w-auto"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            <span className="sm:inline">Thêm khoản chi</span>
-          </Button>
         </div>
+        <Button 
+          onClick={() => {
+            setSelectedExpenditure(null);
+            setIsExpenditureModalOpen(true);
+          }}
+          className="bg-tea-brown hover:bg-tea-brown/90"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Thêm khoản chi
+        </Button>
       </div>
 
       {/* Dynamic Summary Cards based on filtered allocation accounts */}
@@ -726,7 +779,37 @@ export default function ReserveFunds() {
       {/* Expenditure History Table */}
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
+          {/* Mobile Layout: Title, Add Button, Bulk Delete Button stacked */}
+          <div className="md:hidden space-y-3">
+            <div>
+              <CardTitle>LỊCH SỬ TRÍCH QUỸ</CardTitle>
+              <p className="text-sm text-gray-600">Danh sách các khoản chi từ quỹ dự trữ</p>
+            </div>
+            <Button 
+              onClick={() => {
+                setSelectedExpenditure(null);
+                setIsExpenditureModalOpen(true);
+              }}
+              className="w-full"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Thêm khoản chi
+            </Button>
+            {selectedExpenditures.length > 0 && (
+              <Button 
+                variant="destructive" 
+                onClick={handleBulkDelete}
+                disabled={deleteMultipleExpendituresMutation.isPending}
+                className="w-full"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Xóa ({selectedExpenditures.length}) mục đã chọn
+              </Button>
+            )}
+          </div>
+
+          {/* Desktop Layout: Same as before */}
+          <div className="hidden md:flex justify-between items-center">
             <div>
               <CardTitle>LỊCH SỬ TRÍCH QUỸ</CardTitle>
               <p className="text-sm text-gray-600">Danh sách các khoản chi từ quỹ dự trữ</p>
