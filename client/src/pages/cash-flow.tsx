@@ -142,7 +142,7 @@ export default function CashFlow() {
   };
 
   const handleRevenueEdit = (month: number, currentAmount: number) => {
-    setEditingRevenue({ month, amount: currentAmount });
+    setEditingRevenue({ month, amount: Math.round(currentAmount) });
   };
 
   const handleRevenueUpdate = (month: number, newAmount: number) => {
