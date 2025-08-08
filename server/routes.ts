@@ -186,7 +186,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/expenses/:year", requireAuth, async (req, res) => {
     try {
       const year = parseInt(req.params.year);
+      console.log(`API /api/expenses/${year} called`);
       const expenses = await storage.getExpenses(year);
+      console.log(`Found ${expenses.length} expenses for year ${year}`);
       res.json(expenses);
     } catch (error) {
       console.error("Error getting expenses by year:", error);

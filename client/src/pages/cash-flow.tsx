@@ -27,12 +27,13 @@ export default function CashFlow() {
   const queryClient = useQueryClient();
 
   const { data: revenues, isLoading } = useQuery({
-    queryKey: ["/api/revenues", selectedYear],
+    queryKey: [`/api/revenues/${selectedYear}`],
   });
 
   const { data: expenses } = useQuery({
-    queryKey: ["/api/expenses", selectedYear],
+    queryKey: [`/api/expenses/${selectedYear}`],
   });
+
 
   // Fetch system settings for currency
   const { data: systemSettings = [] } = useQuery<SystemSetting[]>({
