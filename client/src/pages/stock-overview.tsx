@@ -27,6 +27,7 @@ import { useFormattedData } from "@/hooks/useFormattedData";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import StockItemModal from "@/components/modals/stock-item-modal.tsx";
+import PriceHistoryModal from "@/components/modals/price-history-modal.tsx";
 import {
   Package,
   AlertTriangle,
@@ -34,6 +35,7 @@ import {
   Plus,
   Edit,
   Trash2,
+  History,
 } from "lucide-react";
 import type { StockItem } from "@shared/schema";
 
@@ -52,6 +54,8 @@ export default function StockOverview() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deleteItemId, setDeleteItemId] = useState<string | null>(null);
   const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
+  const [isPriceHistoryModalOpen, setIsPriceHistoryModalOpen] = useState(false);
+  const [priceHistoryItem, setPriceHistoryItem] = useState<StockItem | null>(null);
   const { formatMoney } = useFormattedData();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -137,6 +141,11 @@ export default function StockOverview() {
 
   const confirmBulkDelete = () => {
     bulkDeleteMutation.mutate(selectedItems);
+  };
+
+  const handleViewPriceHistory = (item: StockItem) => {
+    setPriceHistoryItem(item);
+    setIsPriceHistoryModalOpen(true);
   };
 
   const toggleSelectItem = (itemId: string) => {
@@ -312,7 +321,18 @@ export default function StockOverview() {
                     <TableCell className="font-medium">{item.name}</TableCell>
                     <TableCell>{item.unit}</TableCell>
                     <TableCell className="text-right">
-                      {formatMoney(parseFloat(item.unitPrice || '0'))}
+                      <Button
+                        variant="ghost"
+                        className="h-auto p-1 text-right hover:bg-blue-50 hover:text-blue-600"
+                        onClick={() => handleViewPriceHistory(item)}
+                      >
+                        <div className="flex items-center gap-1">
+                          <span className="font-medium">
+                            {formatMoney(parseFloat(item.unitPrice || '0'))}
+                          </span>
+                          <History className="h-3 w-3 opacity-60" />
+                        </div>
+                      </Button>
                     </TableCell>
                     <TableCell className="text-right">
                       <span className="text-green-600 font-medium">
@@ -379,6 +399,16 @@ export default function StockOverview() {
           if (!open) setEditingItem(null);
         }}
         editingItem={editingItem}
+      />
+
+      {/* Price History Modal */}
+      <PriceHistoryModal
+        open={isPriceHistoryModalOpen}
+        onOpenChange={(open: boolean) => {
+          setIsPriceHistoryModalOpen(open);
+          if (!open) setPriceHistoryItem(null);
+        }}
+        item={priceHistoryItem}
       />
 
       {/* Delete Confirmation Dialog */}

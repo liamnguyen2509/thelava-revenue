@@ -317,6 +317,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get stock item price history
+  app.get("/api/stock/items/:id/price-history", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const priceHistory = await storage.getStockItemPriceHistory(id);
+      res.json(priceHistory);
+    } catch (error) {
+      console.error('Error fetching price history:', error);
+      res.status(500).json({ message: "Lỗi khi lấy lịch sử giá" });
+    }
+  });
+
+  // Update stock transaction
+  app.put("/api/stock/transactions/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updateData = insertStockTransactionSchema.partial().parse(req.body);
+      const transaction = await storage.updateStockTransaction(id, updateData);
+      res.json(transaction);
+    } catch (error) {
+      console.error('Error updating transaction:', error);
+      res.status(500).json({ message: "Lỗi khi cập nhật giao dịch" });
+    }
+  });
+
+  // Delete stock transaction
+  app.delete("/api/stock/transactions/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteStockTransaction(id);
+      res.json({ message: "Đã xóa giao dịch thành công" });
+    } catch (error) {
+      console.error('Error deleting transaction:', error);
+      res.status(500).json({ message: "Lỗi khi xóa giao dịch" });
+    }
+  });
+
+  // Bulk delete stock transactions
+  app.delete("/api/stock/transactions", requireAuth, async (req, res) => {
+    try {
+      const { ids } = req.body;
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ message: "Danh sách ID không hợp lệ" });
+      }
+
+      // Delete all transactions in the array
+      await Promise.all(ids.map(id => storage.deleteStockTransaction(id)));
+      res.json({ message: `Đã xóa ${ids.length} giao dịch thành công` });
+    } catch (error) {
+      console.error('Error bulk deleting transactions:', error);
+      res.status(500).json({ message: "Lỗi khi xóa giao dịch" });
+    }
+  });
+
   // Reserve allocation routes
   app.get("/api/reserve-allocations", requireAuth, async (req, res) => {
     try {

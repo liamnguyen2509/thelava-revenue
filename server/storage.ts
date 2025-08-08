@@ -10,7 +10,7 @@ import {
   type SystemSetting, type InsertSystemSetting
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, sql, desc } from "drizzle-orm";
+import { eq, and, sql, desc, isNotNull } from "drizzle-orm";
 
 // IStorage Interface
 interface IStorage {
@@ -36,6 +36,10 @@ interface IStorage {
   getStockSummary(): Promise<{ totalItems: number; lowStockItems: number; totalValue: number }>;
   getStockTransactionSummary(itemId: string): Promise<{ totalIn: number; totalOut: number }>;
   getStockItemsWithTransactionSummary(): Promise<(StockItem & { totalIn: number; totalOut: number })[]>;
+  getStockItemPriceHistory(itemId: string): Promise<Array<{ date: string; price: string; type: string; quantity: string; notes?: string }>>;
+  updateStockTransaction(id: string, updateData: Partial<InsertStockTransaction>): Promise<StockTransaction>;
+  deleteStockTransaction(id: string): Promise<void>;
+  getStockTransaction(id: string): Promise<StockTransaction | undefined>;
   getAllocationAccounts(): Promise<AllocationAccount[]>;
   createAllocationAccount(insertAllocationAccount: InsertAllocationAccount): Promise<AllocationAccount>;
   getReserveAllocations(year: number, month?: number): Promise<ReserveAllocation[]>;
@@ -364,6 +368,92 @@ export class DatabaseStorage implements IStorage {
     );
     
     return itemsWithSummary;
+  }
+
+  async getStockItemPriceHistory(itemId: string): Promise<Array<{ date: string; price: string; type: string; quantity: string; notes?: string }>> {
+    const transactions = await db
+      .select({
+        transactionDate: stockTransactions.transactionDate,
+        unitPrice: stockTransactions.unitPrice,
+        type: stockTransactions.type,
+        quantity: stockTransactions.quantity,
+        notes: stockTransactions.notes
+      })
+      .from(stockTransactions)
+      .where(and(
+        eq(stockTransactions.itemId, itemId),
+        isNotNull(stockTransactions.unitPrice)
+      ))
+      .orderBy(desc(stockTransactions.transactionDate));
+
+    return transactions.map(t => ({
+      date: t.transactionDate,
+      price: t.unitPrice || '0',
+      type: t.type,
+      quantity: t.quantity,
+      notes: t.notes || undefined
+    }));
+  }
+
+  async getStockTransaction(id: string): Promise<StockTransaction | undefined> {
+    const [transaction] = await db.select().from(stockTransactions).where(eq(stockTransactions.id, id));
+    return transaction || undefined;
+  }
+
+  async updateStockTransaction(id: string, updateData: Partial<InsertStockTransaction>): Promise<StockTransaction> {
+    // Get the original transaction to calculate stock adjustment
+    const originalTransaction = await this.getStockTransaction(id);
+    if (!originalTransaction) {
+      throw new Error('Transaction not found');
+    }
+
+    // Update the transaction
+    const [updatedTransaction] = await db
+      .update(stockTransactions)
+      .set(updateData)
+      .where(eq(stockTransactions.id, id))
+      .returning();
+
+    // Recalculate stock levels if quantity or item changed
+    if (updateData.quantity !== undefined || updateData.itemId !== undefined) {
+      // Reverse the original transaction's effect
+      const originalQuantity = parseFloat(originalTransaction.quantity);
+      const reverseType = originalTransaction.type === 'in' ? 'out' : 'in';
+      await this.updateStockAfterTransaction(
+        originalTransaction.itemId,
+        originalQuantity,
+        reverseType as 'in' | 'out'
+      );
+
+      // Apply the new transaction's effect
+      const newQuantity = updateData.quantity ? parseFloat(updateData.quantity) : originalQuantity;
+      const newItemId = updateData.itemId || originalTransaction.itemId;
+      await this.updateStockAfterTransaction(
+        newItemId,
+        newQuantity,
+        updatedTransaction.type as 'in' | 'out'
+      );
+    }
+
+    return updatedTransaction;
+  }
+
+  async deleteStockTransaction(id: string): Promise<void> {
+    // Get the transaction to reverse its stock effect
+    const transaction = await this.getStockTransaction(id);
+    if (transaction) {
+      // Reverse the transaction's effect on stock
+      const quantity = parseFloat(transaction.quantity);
+      const reverseType = transaction.type === 'in' ? 'out' : 'in';
+      await this.updateStockAfterTransaction(
+        transaction.itemId,
+        quantity,
+        reverseType as 'in' | 'out'
+      );
+    }
+
+    // Delete the transaction
+    await db.delete(stockTransactions).where(eq(stockTransactions.id, id));
   }
 
   async getAllocationAccounts(): Promise<AllocationAccount[]> {

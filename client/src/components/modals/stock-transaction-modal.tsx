@@ -27,27 +27,47 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon, Plus, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useFormattedData } from "@/hooks/useFormattedData";
-import { insertStockTransactionSchema } from "@shared/schema";
-import type { InsertStockTransaction, StockItem, SystemSetting } from "@shared/schema";
+import { insertStockTransactionSchema, insertStockItemSchema } from "@shared/schema";
+import type { InsertStockTransaction, StockItem, SystemSetting, InsertStockItem, StockTransaction } from "@shared/schema";
 import { z } from "zod";
+import { format } from "date-fns";
+import { vi } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 interface StockTransactionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   transactionType: "in" | "out";
+  editingTransaction?: StockTransaction | null;
 }
 
 export default function StockTransactionModal({ 
   open, 
   onOpenChange, 
-  transactionType 
+  transactionType,
+  editingTransaction 
 }: StockTransactionModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { formatInputAmount, parseInputAmount, formatDisplayDate, currency } = useFormattedData();
+  const [showQuickAdd, setShowQuickAdd] = React.useState(false);
+  const [isCreatingProduct, setIsCreatingProduct] = React.useState(false);
 
   const { data: stockItems } = useQuery<StockItem[]>({
     queryKey: ["/api/stock/items"],
@@ -69,6 +89,26 @@ export default function StockTransactionModal({
     ),
   });
 
+  // Quick add product form
+  const quickAddSchema = insertStockItemSchema.extend({
+    name: z.string().min(1, "Tên hàng hóa là bắt buộc"),
+    unit: z.string().min(1, "Đơn vị là bắt buộc"),
+    unitPrice: z.string().min(1, "Giá thành là bắt buộc"),
+  });
+
+  const quickAddForm = useForm<InsertStockItem>({
+    resolver: zodResolver(quickAddSchema),
+    defaultValues: {
+      name: "",
+      category: "",
+      unit: "",
+      unitPrice: "",
+      currentStock: "0",
+      minStock: "0",
+      isActive: true,
+    },
+  });
+
   const form = useForm<InsertStockTransaction>({
     resolver: zodResolver(enhancedSchema),
     defaultValues: {
@@ -81,6 +121,35 @@ export default function StockTransactionModal({
       transactionDate: new Date().toISOString().split('T')[0],
     },
   });
+
+  // Reset form when editing transaction changes or modal opens
+  React.useEffect(() => {
+    if (open) {
+      if (editingTransaction) {
+        // Editing mode - populate form with existing data
+        form.reset({
+          itemId: editingTransaction.itemId,
+          type: editingTransaction.type as "in" | "out",
+          quantity: editingTransaction.quantity,
+          unitPrice: editingTransaction.unitPrice || "",
+          totalPrice: editingTransaction.totalPrice || "",
+          notes: editingTransaction.notes || "",
+          transactionDate: editingTransaction.transactionDate,
+        });
+      } else {
+        // Creating mode - reset to defaults
+        form.reset({
+          itemId: "",
+          type: transactionType,
+          quantity: "",
+          unitPrice: "",
+          totalPrice: "",
+          notes: "",
+          transactionDate: new Date().toISOString().split('T')[0],
+        });
+      }
+    }
+  }, [open, editingTransaction, transactionType, form]);
 
   // Watch quantity, unitPrice, and itemId for calculations and auto-population
   const watchedQuantity = form.watch("quantity");
@@ -138,6 +207,77 @@ export default function StockTransactionModal({
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: async (data: InsertStockTransaction) => {
+      const res = await apiRequest(`/api/stock/transactions/${editingTransaction?.id}`, "PUT", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/stock/transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stock/items"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stock/summary"] });
+      toast({
+        title: "Thành công",
+        description: "Cập nhật giao dịch thành công",
+      });
+      form.reset();
+      onOpenChange(false);
+    },
+    onError: (error: any) => {
+      console.error("Stock transaction update error:", error);
+      toast({
+        title: "Lỗi",
+        description: error?.message || "Không thể cập nhật giao dịch",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Create product mutation
+  const createProductMutation = useMutation({
+    mutationFn: async (data: InsertStockItem) => {
+      const res = await apiRequest("/api/stock/items", "POST", data);
+      return res.json();
+    },
+    onSuccess: (newProduct) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/stock/items"] });
+      toast({
+        title: "Thành công",
+        description: "Đã thêm sản phẩm mới",
+      });
+      // Auto-select the newly created product
+      form.setValue("itemId", newProduct.id);
+      // Close quick add form
+      setShowQuickAdd(false);
+      quickAddForm.reset();
+    },
+    onError: (error: any) => {
+      console.error("Create product error:", error);
+      toast({
+        title: "Lỗi",
+        description: error?.message || "Không thể tạo sản phẩm mới",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCreateProduct = (data: InsertStockItem) => {
+    const parsedData = {
+      ...data,
+      unitPrice: parseInputAmount(data.unitPrice || "0"),
+      currentStock: data.currentStock || "0",
+      minStock: data.minStock || "0",
+    };
+    setIsCreatingProduct(true);
+    createProductMutation.mutate(parsedData);
+  };
+
+  React.useEffect(() => {
+    if (!createProductMutation.isPending) {
+      setIsCreatingProduct(false);
+    }
+  }, [createProductMutation.isPending]);
+
   const onSubmit = (data: InsertStockTransaction) => {
     // Parse unit price from formatted display value
     const parsedData = {
@@ -146,7 +286,12 @@ export default function StockTransactionModal({
       quantity: data.quantity,
       totalPrice: data.totalPrice,
     };
-    createMutation.mutate(parsedData);
+    
+    if (editingTransaction) {
+      updateMutation.mutate(parsedData);
+    } else {
+      createMutation.mutate(parsedData);
+    }
   };
 
   // Helper function to format date for display (dd/mm/yyyy)
@@ -170,13 +315,22 @@ export default function StockTransactionModal({
     return new Date().toISOString().split('T')[0];
   };
 
-  const isPending = createMutation.isPending;
+  const isPending = createMutation.isPending || updateMutation.isPending;
+  const isEditMode = !!editingTransaction;
 
   const getTitle = () => {
+    if (isEditMode) {
+      return transactionType === "in" ? "Sửa giao dịch nhập" : "Sửa giao dịch xuất";
+    }
     return transactionType === "in" ? "Nhập hàng" : "Xuất hàng";
   };
 
   const getDescription = () => {
+    if (isEditMode) {
+      return transactionType === "in" 
+        ? "Cập nhật thông tin giao dịch nhập hàng" 
+        : "Cập nhật thông tin giao dịch xuất hàng";
+    }
     return transactionType === "in" 
       ? "Thêm hàng hóa vào kho" 
       : "Xuất hàng hóa từ kho";
@@ -198,21 +352,136 @@ export default function StockTransactionModal({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Hàng hóa</FormLabel>
-                  <Select value={field.value || ""} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Chọn hàng hóa" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {stockItems?.filter(item => item.id && item.id.trim() !== '').map((item) => (
-                        <SelectItem key={item.id} value={item.id}>
-                          {item.name} - {item.unit}
-                          {item.unitPrice && ` - ${formatInputAmount(item.unitPrice)} ${currency}`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <Select value={field.value || ""} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger className="flex-1">
+                            <SelectValue placeholder="Chọn hàng hóa" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {stockItems?.filter(item => item.id && item.id.trim() !== '').map((item) => (
+                            <SelectItem key={item.id} value={item.id}>
+                              {item.name} - {item.unit}
+                              {item.unitPrice && ` - ${formatInputAmount(item.unitPrice)} ${currency}`}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowQuickAdd(!showQuickAdd)}
+                        className="shrink-0"
+                      >
+                        {showQuickAdd ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                      </Button>
+                    </div>
+
+                    {/* Quick Add Product Form */}
+                    {showQuickAdd && (
+                      <Card className="border-dashed">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-sm">Thêm sản phẩm nhanh</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <Form {...quickAddForm}>
+                            <form onSubmit={quickAddForm.handleSubmit(handleCreateProduct)} className="space-y-3">
+                              <div className="grid grid-cols-2 gap-3">
+                                <FormField
+                                  control={quickAddForm.control}
+                                  name="name"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel className="text-xs">Tên sản phẩm *</FormLabel>
+                                      <FormControl>
+                                        <Input placeholder="Tên sản phẩm" {...field} className="h-8" />
+                                      </FormControl>
+                                      <FormMessage className="text-xs" />
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={quickAddForm.control}
+                                  name="unit"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel className="text-xs">Đơn vị *</FormLabel>
+                                      <FormControl>
+                                        <Input placeholder="kg, lít, hộp..." {...field} className="h-8" />
+                                      </FormControl>
+                                      <FormMessage className="text-xs" />
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
+                              <div className="grid grid-cols-2 gap-3">
+                                <FormField
+                                  control={quickAddForm.control}
+                                  name="unitPrice"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel className="text-xs">Giá thành *</FormLabel>
+                                      <FormControl>
+                                        <Input
+                                          placeholder="0"
+                                          {...field}
+                                          className="h-8"
+                                          value={field.value ? formatInputAmount(field.value) : ""}
+                                          onChange={(e) => {
+                                            const rawValue = parseInputAmount(e.target.value);
+                                            field.onChange(rawValue);
+                                          }}
+                                        />
+                                      </FormControl>
+                                      <FormMessage className="text-xs" />
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={quickAddForm.control}
+                                  name="category"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel className="text-xs">Danh mục</FormLabel>
+                                      <FormControl>
+                                        <Input placeholder="Danh mục" {...field} className="h-8" />
+                                      </FormControl>
+                                      <FormMessage className="text-xs" />
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  type="submit"
+                                  size="sm"
+                                  disabled={isCreatingProduct}
+                                  className="bg-tea-brown hover:bg-tea-brown/90 h-8"
+                                >
+                                  {isCreatingProduct ? "Đang tạo..." : "Tạo & Chọn"}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setShowQuickAdd(false);
+                                    quickAddForm.reset();
+                                  }}
+                                  className="h-8"
+                                >
+                                  Hủy
+                                </Button>
+                              </div>
+                            </form>
+                          </Form>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
@@ -252,30 +521,42 @@ export default function StockTransactionModal({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Ngày giao dịch</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="text"
-                        placeholder="dd/mm/yyyy"
-                        {...field}
-                        value={field.value ? formatDateForDisplay(field.value) : ""}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          // Allow only numbers and slashes
-                          const cleaned = value.replace(/[^0-9\/]/g, '');
-                          if (cleaned.length <= 10) {
-                            const parsed = parseDateFromDisplay(cleaned.length === 10 ? cleaned : new Date().toISOString().split('T')[0]);
-                            field.onChange(parsed);
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(new Date(field.value), "dd/MM/yyyy", { locale: vi })
+                            ) : (
+                              <span>Chọn ngày</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value ? new Date(field.value) : undefined}
+                          onSelect={(date) => {
+                            if (date) {
+                              field.onChange(date.toISOString().split('T')[0]);
+                            }
+                          }}
+                          disabled={(date) =>
+                            date > new Date() || date < new Date("1900-01-01")
                           }
-                        }}
-                        onBlur={(e) => {
-                          const value = e.target.value;
-                          if (value.length === 10) {
-                            const parsed = parseDateFromDisplay(value);
-                            field.onChange(parsed);
-                          }
-                        }}
-                      />
-                    </FormControl>
+                          initialFocus
+                          locale={vi}
+                        />
+                      </PopoverContent>
+                    </Popover>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -363,7 +644,9 @@ export default function StockTransactionModal({
               >
                 {isPending 
                   ? "Đang xử lý..." 
-                  : (transactionType === "in" ? "Nhập hàng" : "Xuất hàng")
+                  : isEditMode 
+                    ? "Cập nhật"
+                    : (transactionType === "in" ? "Nhập hàng" : "Xuất hàng")
                 }
               </Button>
             </div>
