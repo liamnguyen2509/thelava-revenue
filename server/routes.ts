@@ -151,6 +151,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Summary route must come before parameterized routes
+  app.get("/api/expenses/summary", requireAuth, async (req, res) => {
+    try {
+      const summary = await storage.getExpenseSummary();
+      res.json(summary);
+    } catch (error) {
+      res.status(500).json({ message: "Lỗi khi lấy tổng quan chi phí" });
+    }
+  });
+
   app.post("/api/expenses", requireAuth, async (req, res) => {
     try {
       const expenseData = insertExpenseSchema.parse(req.body);
@@ -205,15 +215,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error getting expenses by year/month:", error);
       res.status(500).json({ message: "Lỗi khi lấy dữ liệu chi phí" });
-    }
-  });
-
-  app.get("/api/expenses/summary", requireAuth, async (req, res) => {
-    try {
-      const summary = await storage.getExpenseSummary();
-      res.json(summary);
-    } catch (error) {
-      res.status(500).json({ message: "Lỗi khi lấy tổng quan chi phí" });
     }
   });
 
