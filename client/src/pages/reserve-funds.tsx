@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,7 +22,8 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Plus, TrendingUp, Wallet, PieChart, Edit, Trash2, 
-  DollarSign, Target, AlertTriangle, Users 
+  DollarSign, Target, AlertTriangle, Users, ChevronDown, 
+  ChevronRight as ChevronRightIcon 
 } from "lucide-react";
 import ReserveAllocationModal from "@/components/modals/reserve-allocation-modal";
 import ReserveExpenditureModal from "@/components/modals/reserve-expenditure-modal";
@@ -72,10 +73,50 @@ export default function ReserveFunds() {
   const [expenditureToDelete, setExpenditureToDelete] = useState<string | null>(null);
   const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [expandedMonths, setExpandedMonths] = useState<Set<number>>(new Set());
+  const [expandedExpenditures, setExpandedExpenditures] = useState<Set<string>>(new Set());
   const itemsPerPage = 10;
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Vietnamese number formatting for mobile
+  const formatNumberToVietnamese = (amount: number) => {
+    const absAmount = Math.abs(amount);
+    if (absAmount >= 1000000) {
+      const millions = amount / 1000000;
+      return `${millions.toFixed(millions % 1 === 0 ? 0 : 1)} triệu`;
+    } else if (absAmount >= 1000) {
+      const thousands = amount / 1000;
+      return `${thousands.toFixed(thousands % 1 === 0 ? 0 : 1)} nghìn`;
+    } else {
+      return Math.round(amount).toString();
+    }
+  };
+
+  const formatMobileAmount = (amount: number) => {
+    return formatNumberToVietnamese(amount);
+  };
+
+  const toggleMonthExpansion = (month: number) => {
+    const newExpanded = new Set(expandedMonths);
+    if (newExpanded.has(month)) {
+      newExpanded.delete(month);
+    } else {
+      newExpanded.add(month);
+    }
+    setExpandedMonths(newExpanded);
+  };
+
+  const toggleExpenditureExpansion = (expenditureId: string) => {
+    const newExpanded = new Set(expandedExpenditures);
+    if (newExpanded.has(expenditureId)) {
+      newExpanded.delete(expenditureId);
+    } else {
+      newExpanded.add(expenditureId);
+    }
+    setExpandedExpenditures(newExpanded);
+  };
 
   // Generate years array like in cash flow page
   const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
@@ -462,63 +503,153 @@ export default function ReserveFunds() {
             </CardHeader>
             <CardContent>
               <div className="mobile-table-container">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="sticky left-0 bg-white z-10 px-2 sm:px-4">Tháng</TableHead>
+                <table className="min-w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-center py-3 px-2 w-8 md:hidden"></th>
+                      <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4">Tháng</th>
                       {filteredAllocationAccounts.slice(0, 4).map((account, index) => (
-                        <TableHead key={account.id} className={`text-right px-2 sm:px-4 ${index >= 2 ? 'hidden lg:table-cell' : ''}`}>{account.name}</TableHead>
+                        <th key={account.id} className={`text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden md:table-cell`}>{account.name}</th>
                       ))}
-                      <TableHead className="text-right px-2 sm:px-4">Tổng</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                <TableBody>
-                  {selectedMonth !== null ? (
-                    // Show only selected month
-                    (() => {
-                      const monthData = expenditureSummary?.byAccount || {};
-                      const monthTotal = filteredAllocationAccounts.reduce((sum, account) => 
-                        sum + (monthData[account.name] || 0), 0);
-                      
-                      return (
-                        <TableRow>
-                          <TableCell className="font-medium sticky left-0 bg-white px-2 sm:px-4">Tháng {selectedMonth}</TableCell>
-                          {filteredAllocationAccounts.slice(0, 4).map((account, index) => (
-                            <TableCell key={account.id} className={`text-right px-2 sm:px-4 ${index >= 2 ? 'hidden lg:table-cell' : ''}`}>
-                              <div className="truncate">{monthData[account.name] ? formatCurrency(monthData[account.name]) : "0"}</div>
-                            </TableCell>
-                          ))}
-                          <TableCell className="text-right font-semibold px-2 sm:px-4">
-                            <div className="truncate">{monthTotal > 0 ? formatCurrency(monthTotal) : "0"}</div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })()
-                  ) : (
-                    // Show all months for the year
-                    Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
-                      const monthData = expenditureSummary?.monthlyExpenditure?.[month] || {};
-                      // Only calculate total for filtered accounts (exclude "Cổ tức" and "Marketing")
-                      const monthTotal = filteredAllocationAccounts.reduce((sum, account) => 
-                        sum + (monthData[account.name] || 0), 0);
-                      
-                      return (
-                        <TableRow key={month}>
-                          <TableCell className="font-medium sticky left-0 bg-white px-2 sm:px-4">Tháng {month}</TableCell>
-                          {filteredAllocationAccounts.slice(0, 4).map((account, index) => (
-                            <TableCell key={account.id} className={`text-right px-2 sm:px-4 ${index >= 2 ? 'hidden lg:table-cell' : ''}`}>
-                              <div className="truncate">{monthData[account.name] ? formatCurrency(monthData[account.name]) : "0"}</div>
-                            </TableCell>
-                          ))}
-                          <TableCell className="text-right font-semibold px-2 sm:px-4">
-                            <div className="truncate">{monthTotal > 0 ? formatCurrency(monthTotal) : "0"}</div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                  )}                
-                </TableBody>
-                </Table>
+                      <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4">Tổng</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedMonth !== null ? (
+                      // Show only selected month
+                      (() => {
+                        const monthData = expenditureSummary?.byAccount || {};
+                        const monthTotal = filteredAllocationAccounts.reduce((sum, account) => 
+                          sum + (monthData[account.name] || 0), 0);
+                        const isExpanded = expandedMonths.has(selectedMonth);
+                        
+                        return (
+                          <React.Fragment key={selectedMonth}>
+                            <tr className="border-b border-gray-50 hover:bg-gray-50">
+                              {/* Mobile Expand Button */}
+                              <td className="py-4 px-2 text-center md:hidden">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => toggleMonthExpansion(selectedMonth)}
+                                  className="h-8 w-8 p-0 hover:bg-gray-100"
+                                >
+                                  {isExpanded ? (
+                                    <ChevronDown className="h-4 w-4" />
+                                  ) : (
+                                    <ChevronRightIcon className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </td>
+                              
+                              {/* Month */}
+                              <td className="py-4 px-2 sm:px-4 font-medium text-gray-900">Tháng {selectedMonth}</td>
+                              
+                              {/* Account Details - Hidden on mobile */}
+                              {filteredAllocationAccounts.slice(0, 4).map((account) => (
+                                <td key={account.id} className="py-4 px-2 sm:px-4 text-right text-sm font-medium text-gray-900 hidden md:table-cell">
+                                  <div className="truncate">{monthData[account.name] ? formatCurrency(monthData[account.name]) : "0"}</div>
+                                </td>
+                              ))}
+                              
+                              {/* Total */}
+                              <td className="py-4 px-2 sm:px-4 text-right font-semibold text-gray-900">
+                                <div className="truncate">
+                                  <span className="md:hidden">{monthTotal > 0 ? formatMobileAmount(monthTotal) : "0"}</span>
+                                  <span className="hidden md:inline">{monthTotal > 0 ? formatCurrency(monthTotal) : "0"}</span>
+                                </div>
+                              </td>
+                            </tr>
+                            
+                            {/* Expandable Row Details for Mobile */}
+                            {isExpanded && (
+                              <tr className="md:hidden border-b border-gray-50 bg-gray-50">
+                                <td colSpan={3} className="px-4 py-3">
+                                  <div className="space-y-2 text-sm">
+                                    {filteredAllocationAccounts.slice(0, 4).map((account) => (
+                                      <div key={account.id} className="flex justify-between">
+                                        <span className="text-gray-600">{account.name}:</span>
+                                        <span className="font-medium">
+                                          {monthData[account.name] ? formatMobileAmount(monthData[account.name]) : "0"}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
+                        );
+                      })()
+                    ) : (
+                      // Show all months for the year
+                      Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
+                        const monthData = expenditureSummary?.monthlyExpenditure?.[month] || {};
+                        const monthTotal = filteredAllocationAccounts.reduce((sum, account) => 
+                          sum + (monthData[account.name] || 0), 0);
+                        const isExpanded = expandedMonths.has(month);
+                        
+                        return (
+                          <React.Fragment key={month}>
+                            <tr className="border-b border-gray-50 hover:bg-gray-50">
+                              {/* Mobile Expand Button */}
+                              <td className="py-4 px-2 text-center md:hidden">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => toggleMonthExpansion(month)}
+                                  className="h-8 w-8 p-0 hover:bg-gray-100"
+                                >
+                                  {isExpanded ? (
+                                    <ChevronDown className="h-4 w-4" />
+                                  ) : (
+                                    <ChevronRightIcon className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </td>
+                              
+                              {/* Month */}
+                              <td className="py-4 px-2 sm:px-4 font-medium text-gray-900">Tháng {month}</td>
+                              
+                              {/* Account Details - Hidden on mobile */}
+                              {filteredAllocationAccounts.slice(0, 4).map((account) => (
+                                <td key={account.id} className="py-4 px-2 sm:px-4 text-right text-sm font-medium text-gray-900 hidden md:table-cell">
+                                  <div className="truncate">{monthData[account.name] ? formatCurrency(monthData[account.name]) : "0"}</div>
+                                </td>
+                              ))}
+                              
+                              {/* Total */}
+                              <td className="py-4 px-2 sm:px-4 text-right font-semibold text-gray-900">
+                                <div className="truncate">
+                                  <span className="md:hidden">{monthTotal > 0 ? formatMobileAmount(monthTotal) : "0"}</span>
+                                  <span className="hidden md:inline">{monthTotal > 0 ? formatCurrency(monthTotal) : "0"}</span>
+                                </div>
+                              </td>
+                            </tr>
+                            
+                            {/* Expandable Row Details for Mobile */}
+                            {isExpanded && (
+                              <tr className="md:hidden border-b border-gray-50 bg-gray-50">
+                                <td colSpan={3} className="px-4 py-3">
+                                  <div className="space-y-2 text-sm">
+                                    {filteredAllocationAccounts.slice(0, 4).map((account) => (
+                                      <div key={account.id} className="flex justify-between">
+                                        <span className="text-gray-600">{account.name}:</span>
+                                        <span className="font-medium">
+                                          {monthData[account.name] ? formatMobileAmount(monthData[account.name]) : "0"}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
+                        );
+                      })
+                    )}                
+                  </tbody>
+                </table>
               </div>
             </CardContent>
           </Card>
@@ -626,74 +757,176 @@ export default function ReserveFunds() {
         </CardHeader>
         <CardContent>
           {expenditures && expenditures.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-12">
-                    <Checkbox
-                      checked={selectedExpenditures.length === expenditures.length}
-                      onCheckedChange={toggleSelectAll}
-                    />
-                  </TableHead>
-                  <TableHead>STT</TableHead>
-                  <TableHead>Mục chi</TableHead>
-                  <TableHead>Nguồn chi</TableHead>
-                  <TableHead className="text-right">Tiền chi</TableHead>
-                  <TableHead>Ngày chi</TableHead>
-                  <TableHead>Ghi chú</TableHead>
-                  <TableHead className="text-center">Thao tác</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedExpenditures.map((expenditure: ReserveExpenditure, index: number) => (
-                  <TableRow key={expenditure.id}>
-                    <TableCell>
+            <div className="mobile-table-container">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-3 px-2 sm:px-4 sticky left-0 bg-white z-10 w-12">
                       <Checkbox
-                        checked={selectedExpenditures.includes(expenditure.id)}
-                        onCheckedChange={() => toggleSelectExpenditure(expenditure.id)}
+                        checked={selectedExpenditures.length === expenditures.length}
+                        onCheckedChange={toggleSelectAll}
                       />
-                    </TableCell>
-                    <TableCell className="font-medium">{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
-                    <TableCell>{expenditure.name}</TableCell>
-                    <TableCell>
-                      <Badge className={getAccountColor(expenditure.sourceType)}>
-                        {expenditure.sourceType}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-medium">
-                      {formatCurrency(expenditure.amount)}
-                    </TableCell>
-                    <TableCell>
-                      {new Date(expenditure.expenditureDate).toLocaleDateString('vi-VN')}
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm text-gray-600">
-                        {expenditure.notes || "-"}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex justify-center space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEditExpenditure(expenditure)}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteExpenditure(expenditure.id)}
-                          disabled={deleteExpenditureMutation.isPending}
-                        >
-                          <Trash2 className="w-4 h-4 text-red-500" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                    </th>
+                    <th className="text-center py-3 px-2 w-8 md:hidden"></th>
+                    <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden md:table-cell">STT</th>
+                    <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4">Mục chi</th>
+                    <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden md:table-cell">Nguồn chi</th>
+                    <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4">Tiền chi</th>
+                    <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden md:table-cell">Ngày chi</th>
+                    <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden md:table-cell">Ghi chú</th>
+                    <th className="text-center text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-4 hidden md:table-cell">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedExpenditures.map((expenditure: ReserveExpenditure, index: number) => {
+                    const isExpanded = expandedExpenditures.has(expenditure.id);
+                    
+                    return (
+                      <React.Fragment key={expenditure.id}>
+                        <tr className="border-b border-gray-50 hover:bg-gray-50">
+                          {/* Checkbox */}
+                          <td className="py-4 px-2 sm:px-4 sticky left-0 bg-white">
+                            <Checkbox
+                              checked={selectedExpenditures.includes(expenditure.id)}
+                              onCheckedChange={() => toggleSelectExpenditure(expenditure.id)}
+                            />
+                          </td>
+                          
+                          {/* Mobile Expand Button */}
+                          <td className="py-4 px-2 text-center md:hidden">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => toggleExpenditureExpansion(expenditure.id)}
+                              className="h-8 w-8 p-0 hover:bg-gray-100"
+                            >
+                              {isExpanded ? (
+                                <ChevronDown className="h-4 w-4" />
+                              ) : (
+                                <ChevronRightIcon className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </td>
+                          
+                          {/* STT - Hidden on mobile */}
+                          <td className="py-4 px-2 sm:px-4 text-sm font-medium text-gray-900 hidden md:table-cell">
+                            {(currentPage - 1) * itemsPerPage + index + 1}
+                          </td>
+                          
+                          {/* Expense Item */}
+                          <td className="py-4 px-2 sm:px-4 text-sm font-medium text-gray-900">
+                            <div className="truncate max-w-[120px] sm:max-w-none" title={expenditure.name}>
+                              {expenditure.name}
+                            </div>
+                          </td>
+                          
+                          {/* Source Account - Hidden on mobile */}
+                          <td className="py-4 px-2 sm:px-4 text-sm text-gray-900 hidden md:table-cell">
+                            <Badge className={getAccountColor(expenditure.sourceType)}>
+                              {expenditure.sourceType}
+                            </Badge>
+                          </td>
+                          
+                          {/* Amount */}
+                          <td className="py-4 px-2 sm:px-4 text-right text-sm font-medium text-gray-900">
+                            <div className="truncate">
+                              <span className="md:hidden">{formatMobileAmount(parseFloat(expenditure.amount))}</span>
+                              <span className="hidden md:inline">{formatCurrency(expenditure.amount)}</span>
+                            </div>
+                          </td>
+                          
+                          {/* Date - Hidden on mobile */}
+                          <td className="py-4 px-2 sm:px-4 text-sm text-gray-900 hidden md:table-cell">
+                            {new Date(expenditure.expenditureDate).toLocaleDateString('vi-VN')}
+                          </td>
+                          
+                          {/* Notes - Hidden on mobile */}
+                          <td className="py-4 px-2 sm:px-4 text-sm text-gray-600 hidden md:table-cell">
+                            <div className="truncate max-w-[100px]" title={expenditure.notes || "-"}>
+                              {expenditure.notes || "-"}
+                            </div>
+                          </td>
+                          
+                          {/* Actions - Hidden on mobile */}
+                          <td className="py-4 px-2 sm:px-4 text-center hidden md:table-cell">
+                            <div className="flex gap-1 sm:gap-2 justify-center">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditExpenditure(expenditure)}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleDeleteExpenditure(expenditure.id)}
+                                disabled={deleteExpenditureMutation.isPending}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                        
+                        {/* Expandable Row Details for Mobile */}
+                        {isExpanded && (
+                          <tr className="md:hidden border-b border-gray-50 bg-gray-50">
+                            <td colSpan={4} className="px-4 py-3">
+                              <div className="space-y-2 text-sm">
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">STT:</span>
+                                  <span className="font-medium">{(currentPage - 1) * itemsPerPage + index + 1}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Nguồn chi:</span>
+                                  <Badge className={getAccountColor(expenditure.sourceType)}>
+                                    {expenditure.sourceType}
+                                  </Badge>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Ngày chi:</span>
+                                  <span className="font-medium">
+                                    {new Date(expenditure.expenditureDate).toLocaleDateString('vi-VN')}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Ghi chú:</span>
+                                  <span className="font-medium">{expenditure.notes || "-"}</span>
+                                </div>
+                                <div className="flex gap-2 pt-2 justify-end border-t border-gray-200">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleEditExpenditure(expenditure)}
+                                    className="h-8"
+                                  >
+                                    <Edit className="h-4 w-4 mr-1" />
+                                    Sửa
+                                  </Button>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => handleDeleteExpenditure(expenditure.id)}
+                                    disabled={deleteExpenditureMutation.isPending}
+                                    className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-1" />
+                                    Xóa
+                                  </Button>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           ) : (
             <div className="text-center py-8">
               <p className="text-gray-500 mb-4">Chưa có khoản chi nào từ quỹ dự trữ</p>
