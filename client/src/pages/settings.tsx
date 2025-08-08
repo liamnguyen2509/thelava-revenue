@@ -400,7 +400,7 @@ export default function SettingsPage() {
 
         {/* Tab Content */}
         <div className="px-4 sm:px-6 pt-12 md:pt-6">
-          <TabsContent value="general" className="mt-0">
+          <TabsContent value="general" className="mt-0 pt-4 md:pt-0">
             <Card>
             <CardHeader>
               <CardTitle>Cài đặt chung</CardTitle>
@@ -445,7 +445,7 @@ export default function SettingsPage() {
           </TabsContent>
 
           {/* Allocation Accounts */}
-          <TabsContent value="allocation" className="mt-0">
+          <TabsContent value="allocation" className="mt-0 pt-4 md:pt-0">
             <Card>
             <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -512,7 +512,7 @@ export default function SettingsPage() {
           </TabsContent>
 
           {/* Expense Categories */}
-          <TabsContent value="categories" className="mt-0">
+          <TabsContent value="categories" className="mt-0 pt-4 md:pt-0">
             <Card>
             <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -578,7 +578,7 @@ export default function SettingsPage() {
           </TabsContent>
 
           {/* Shareholders */}
-          <TabsContent value="shareholders" className="mt-0">
+          <TabsContent value="shareholders" className="mt-0 pt-4 md:pt-0">
             <Card>
             <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
