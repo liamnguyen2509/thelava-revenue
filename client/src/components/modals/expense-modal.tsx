@@ -53,13 +53,31 @@ export function ExpenseModal({ isOpen, onClose }: ExpenseModalProps) {
     return currencySetting?.value || "VNĐ";
   };
 
+  // Helper function to format date to dd/mm/yyyy
+  const formatDateForDisplay = (dateString: string) => {
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  // Helper function to convert dd/mm/yyyy to yyyy-mm-dd
+  const formatDateForInput = (dateString: string) => {
+    if (dateString.includes('/')) {
+      const [day, month, year] = dateString.split('/');
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
+    return dateString;
+  };
+
   const form = useForm<InsertExpense>({
     resolver: zodResolver(insertExpenseSchema),
     defaultValues: {
       name: "",
       category: "",
       amount: "0",
-      expenseDate: new Date().toISOString().split('T')[0] as any,
+      expenseDate: formatDateForDisplay(new Date().toISOString()) as any,
       status: "spent",
       notes: "",
       year: new Date().getFullYear(),
@@ -93,9 +111,13 @@ export function ExpenseModal({ isOpen, onClose }: ExpenseModalProps) {
   });
 
   const onSubmit = async (data: InsertExpense) => {
-    const expenseDate = new Date(data.expenseDate);
+    // Convert date from dd/mm/yyyy to yyyy-mm-dd and remove dots from amount
+    const formattedDate = formatDateForInput(data.expenseDate as string);
+    const expenseDate = new Date(formattedDate);
     const processedData = {
       ...data,
+      amount: data.amount.toString().replace(/\./g, ''), // Remove dots for submission
+      expenseDate: formattedDate,
       year: expenseDate.getFullYear(),
       month: expenseDate.getMonth() + 1,
     };
@@ -147,9 +169,17 @@ export function ExpenseModal({ isOpen, onClose }: ExpenseModalProps) {
             <Label htmlFor="amount">Số tiền ({getCurrency()})</Label>
             <Input
               id="amount"
-              type="number"
               placeholder="0"
               {...form.register("amount")}
+              onChange={(e) => {
+                // Remove all non-digits
+                let value = e.target.value.replace(/\D/g, '');
+                // Format with dots as thousands separators
+                if (value) {
+                  value = parseInt(value).toLocaleString('vi-VN').replace(/,/g, '.');
+                }
+                form.setValue("amount", value);
+              }}
             />
             {form.formState.errors.amount && (
               <p className="text-sm text-destructive">{form.formState.errors.amount.message}</p>
@@ -160,8 +190,19 @@ export function ExpenseModal({ isOpen, onClose }: ExpenseModalProps) {
             <Label htmlFor="expenseDate">Ngày chi phí</Label>
             <Input
               id="expenseDate"
-              type="date"
+              placeholder="dd/mm/yyyy"
               {...form.register("expenseDate")}
+              onChange={(e) => {
+                let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+                if (value.length >= 2) {
+                  value = value.slice(0, 2) + '/' + value.slice(2);
+                }
+                if (value.length >= 5) {
+                  value = value.slice(0, 5) + '/' + value.slice(5, 9);
+                }
+                form.setValue("expenseDate", value as any);
+              }}
+              maxLength={10}
             />
             {form.formState.errors.expenseDate && (
               <p className="text-sm text-destructive">{form.formState.errors.expenseDate.message}</p>
