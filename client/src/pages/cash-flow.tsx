@@ -329,7 +329,7 @@ export default function CashFlow() {
                   // Calculate allocations based on real settings
                   const getAccountAllocation = (accountName: string) => {
                     const account = allocationAccounts.find(acc => acc.name === accountName);
-                    const percentage = account?.percentage || 0;
+                    const percentage = Number(account?.percentage || 0);
                     return (netProfit * percentage) / 100;
                   };
 

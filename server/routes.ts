@@ -120,6 +120,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/revenues/:year", requireAuth, async (req, res) => {
+    try {
+      const year = parseInt(req.params.year);
+      const revenues = await storage.getRevenuesByYear(year);
+      res.json(revenues);
+    } catch (error) {
+      res.status(500).json({ message: "Lỗi khi lấy dữ liệu doanh thu" });
+    }
+  });
+
   app.get("/api/revenues/summary", requireAuth, async (req, res) => {
     try {
       const summary = await storage.getRevenueSummary();
@@ -173,6 +183,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Route với path parameters year/month
+  app.get("/api/expenses/:year", requireAuth, async (req, res) => {
+    try {
+      const year = parseInt(req.params.year);
+      const expenses = await storage.getExpenses(year);
+      res.json(expenses);
+    } catch (error) {
+      console.error("Error getting expenses by year:", error);
+      res.status(500).json({ message: "Lỗi khi lấy dữ liệu chi phí" });
+    }
+  });
+
   app.get("/api/expenses/:year/:month", requireAuth, async (req, res) => {
     try {
       const year = parseInt(req.params.year);
