@@ -312,7 +312,7 @@ export default function StockOut() {
         <body>
           <h1>PHIẾU XUẤT KHO</h1>
           <div class="header-info">
-            <p><strong>Lava Tea Shop</strong></p>
+            <p><strong>Tiệm Trà Lava</strong></p>
             <p>Ngày in: ${formatDisplayDate(new Date().toISOString().split('T')[0])}</p>
             <p>Số giao dịch được chọn: ${selectedTransactionsData.length}</p>
           </div>

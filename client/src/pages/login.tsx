@@ -50,7 +50,7 @@ export default function Login() {
             <Leaf className="w-8 h-8 text-white" />
           </div>
           <div>
-            <CardTitle className="text-2xl font-bold text-tea-brown">Lava Tea Shop</CardTitle>
+            <CardTitle className="text-2xl font-bold text-tea-brown">Tiệm Trà Lava</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">Hệ thống quản lý cửa hàng</p>
           </div>
         </CardHeader>

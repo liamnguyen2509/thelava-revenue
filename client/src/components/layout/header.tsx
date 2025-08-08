@@ -46,7 +46,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
             <Leaf className="text-white w-4 h-4 sm:w-5 sm:h-5" />
           </div>
           <div className="hidden sm:block">
-            <h1 className="text-lg sm:text-xl font-bold text-tea-brown">Lava Tea Shop</h1>
+            <h1 className="text-lg sm:text-xl font-bold text-tea-brown">Tiệm Trà Lava</h1>
             <p className="text-xs text-gray-500">Hệ thống quản lý</p>
           </div>
           <div className="sm:hidden">

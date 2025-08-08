@@ -13,6 +13,59 @@ export function LogoUploader({ currentLogo, onLogoUpdate }: LogoUploaderProps) {
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
 
+  // Function to resize image if it's over 2MB
+  const resizeImageIfNeeded = (file: File): Promise<File> => {
+    return new Promise((resolve) => {
+      if (file.size <= 2 * 1024 * 1024) {
+        // File is already under 2MB
+        resolve(file);
+        return;
+      }
+
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      img.onload = () => {
+        // Calculate new dimensions to reduce file size
+        let { width, height } = img;
+        const maxSize = 1000; // Max dimension
+        
+        if (width > height) {
+          if (width > maxSize) {
+            height = (height * maxSize) / width;
+            width = maxSize;
+          }
+        } else {
+          if (height > maxSize) {
+            width = (width * maxSize) / height;
+            height = maxSize;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw and compress
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const resizedFile = new File([blob], file.name, {
+              type: file.type,
+              lastModified: Date.now()
+            });
+            resolve(resizedFile);
+          } else {
+            resolve(file);
+          }
+        }, file.type, 0.8); // 80% quality
+      };
+      
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -21,17 +74,7 @@ export function LogoUploader({ currentLogo, onLogoUpdate }: LogoUploaderProps) {
     if (!file.type.startsWith('image/')) {
       toast({
         title: "Lỗi",
-        description: "Vui lòng chọn file hình ảnh",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Validate file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      toast({
-        title: "Lỗi", 
-        description: "Kích thước file không được vượt quá 2MB",
+        description: "Vui lòng chọn file hình ảnh (JPG, PNG, GIF, WebP)",
         variant: "destructive"
       });
       return;
@@ -40,16 +83,35 @@ export function LogoUploader({ currentLogo, onLogoUpdate }: LogoUploaderProps) {
     setIsUploading(true);
 
     try {
+      // Resize image if needed
+      let processedFile = file;
+      if (file.size > 2 * 1024 * 1024) {
+        toast({
+          title: "Thông báo",
+          description: "Đang tự động nén ảnh vì kích thước lớn hơn 2MB...",
+        });
+        processedFile = await resizeImageIfNeeded(file);
+        
+        if (processedFile.size > 2 * 1024 * 1024) {
+          toast({
+            title: "Lỗi",
+            description: "Không thể nén ảnh xuống dưới 2MB. Vui lòng chọn ảnh khác.",
+            variant: "destructive"
+          });
+          return;
+        }
+      }
+      
       // Get upload URL
       const uploadResponse = await apiRequest("/api/logo/upload-url", "POST");
       const { uploadURL } = await uploadResponse.json();
 
-      // Upload file
+      // Upload processed file
       await fetch(uploadURL, {
         method: "PUT",
-        body: file,
+        body: processedFile,
         headers: {
-          "Content-Type": file.type,
+          "Content-Type": processedFile.type,
         },
       });
 
