@@ -146,14 +146,9 @@ export function LogoUploader({ currentLogo, onLogoUpdate }: LogoUploaderProps) {
         {currentLogo ? (
           <div className="relative">
             <img 
-              src={currentLogo.startsWith('http') ? currentLogo : `/public-objects${currentLogo}`}
+              src={currentLogo.startsWith('http') ? currentLogo : `/public-objects${currentLogo.replace('/public', '')}`}
               alt="Logo hiện tại" 
               className="w-20 h-20 object-contain border rounded-lg bg-gray-50"
-              onError={(e) => {
-                console.error('Logo loading error:', e);
-                console.log('Logo path:', currentLogo);
-                console.log('Final src:', currentLogo.startsWith('http') ? currentLogo : `/public-objects${currentLogo}`);
-              }}
             />
           </div>
         ) : (
