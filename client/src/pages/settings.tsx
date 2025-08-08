@@ -357,44 +357,51 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 space-y-6">
-      <div className="flex items-center gap-2">
-        <Settings className="h-5 w-5 sm:h-6 sm:w-6 text-tea-brown" />
-        <h1 className="text-xl sm:text-2xl font-bold text-tea-brown">Cài đặt chung</h1>
+    <div className="space-y-6">
+      {/* Page Title */}
+      <div className="p-4 sm:p-6 pb-0">
+        <div className="flex items-center gap-2">
+          <Settings className="h-5 w-5 sm:h-6 sm:w-6 text-tea-brown" />
+          <h1 className="text-xl sm:text-2xl font-bold text-tea-brown">Cài đặt chung</h1>
+        </div>
       </div>
 
-      <Tabs defaultValue="general" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1">
-          <TabsTrigger value="general" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-            <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">Chung</span>
-            <span className="sm:hidden">Chung</span>
-          </TabsTrigger>
-          <TabsTrigger value="allocation" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-            <PieChart className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">Phân bổ quỹ</span>
-            <span className="sm:hidden">Phân bổ</span>
-          </TabsTrigger>
-          <TabsTrigger value="categories" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-            <Tags className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">Danh mục chi phí</span>
-            <span className="sm:hidden">Chi phí</span>
-          </TabsTrigger>
-          <TabsTrigger value="shareholders" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-            <Users className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">Cổ đông</span>
-            <span className="sm:hidden">Cổ đông</span>
-          </TabsTrigger>
-          <TabsTrigger value="branches" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-            <Building className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">Chi nhánh</span>
-            <span className="sm:hidden">Chi nhánh</span>
-          </TabsTrigger>
-        </TabsList>
+      <Tabs defaultValue="general" className="space-y-0">
+        {/* Tab List */}
+        <div className="px-4 sm:px-6">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1">
+            <TabsTrigger value="general" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Chung</span>
+              <span className="sm:hidden">Chung</span>
+            </TabsTrigger>
+            <TabsTrigger value="allocation" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <PieChart className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Phân bổ quỹ</span>
+              <span className="sm:hidden">Phân bổ</span>
+            </TabsTrigger>
+            <TabsTrigger value="categories" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <Tags className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Danh mục chi phí</span>
+              <span className="sm:hidden">Chi phí</span>
+            </TabsTrigger>
+            <TabsTrigger value="shareholders" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <Users className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Cổ đông</span>
+              <span className="sm:hidden">Cổ đông</span>
+            </TabsTrigger>
+            <TabsTrigger value="branches" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <Building className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Chi nhánh</span>
+              <span className="sm:hidden">Chi nhánh</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
-        {/* General Settings */}
-        <TabsContent value="general">
-          <Card>
+        {/* Tab Content */}
+        <div className="px-4 sm:px-6 pt-6">
+          <TabsContent value="general" className="mt-0">
+            <Card>
             <CardHeader>
               <CardTitle>Cài đặt chung</CardTitle>
               <CardDescription>
@@ -434,12 +441,12 @@ export default function SettingsPage() {
                 Lưu cài đặt
               </Button>
             </CardContent>
-          </Card>
-        </TabsContent>
+            </Card>
+          </TabsContent>
 
-        {/* Allocation Accounts */}
-        <TabsContent value="allocation">
-          <Card>
+          {/* Allocation Accounts */}
+          <TabsContent value="allocation" className="mt-0">
+            <Card>
             <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
@@ -501,12 +508,12 @@ export default function SettingsPage() {
                 ))}
               </div>
             </CardContent>
-          </Card>
-        </TabsContent>
+            </Card>
+          </TabsContent>
 
-        {/* Expense Categories */}
-        <TabsContent value="categories">
-          <Card>
+          {/* Expense Categories */}
+          <TabsContent value="categories" className="mt-0">
+            <Card>
             <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
@@ -567,12 +574,12 @@ export default function SettingsPage() {
                 ))}
               </div>
             </CardContent>
-          </Card>
-        </TabsContent>
+            </Card>
+          </TabsContent>
 
-        {/* Shareholders */}
-        <TabsContent value="shareholders">
-          <Card>
+          {/* Shareholders */}
+          <TabsContent value="shareholders" className="mt-0">
+            <Card>
             <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
@@ -633,12 +640,12 @@ export default function SettingsPage() {
                 ))}
               </div>
             </CardContent>
-          </Card>
-        </TabsContent>
+            </Card>
+          </TabsContent>
 
-        {/* Branches */}
-        <TabsContent value="branches">
-          <Card>
+          {/* Branches */}
+          <TabsContent value="branches" className="mt-0">
+            <Card>
             <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
@@ -702,8 +709,9 @@ export default function SettingsPage() {
                 ))}
               </div>
             </CardContent>
-          </Card>
-        </TabsContent>
+            </Card>
+          </TabsContent>
+        </div>
       </Tabs>
 
       {/* Modal for Add/Edit */}
