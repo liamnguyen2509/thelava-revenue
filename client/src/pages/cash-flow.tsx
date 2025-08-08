@@ -183,10 +183,10 @@ export default function CashFlow() {
                   <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Tỷ lệ NPL</th>
                   <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Chi phí cố định</th>
                   <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Tỷ lệ CP Cố định</th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Chi phí khác</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">CP Phát sinh</th>
                   <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Tỷ lệ CP Phát Sinh</th>
                   <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Lợi nhuận ròng</th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Tỷ lệ LN</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Tỉ suất LN</th>
                 </tr>
               </thead>
               <tbody>
