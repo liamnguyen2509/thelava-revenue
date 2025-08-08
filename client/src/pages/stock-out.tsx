@@ -56,7 +56,7 @@ import type { StockItem, StockTransaction } from "@shared/schema";
 export default function StockOut() {
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedYear, setSelectedYear] = useState<string>("all");
+  const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
   const [selectedMonth, setSelectedMonth] = useState<string>("all");
   const [selectedTransactions, setSelectedTransactions] = useState<string[]>([]);
   const [editingTransaction, setEditingTransaction] = useState<StockTransaction | null>(null);
@@ -94,7 +94,7 @@ export default function StockOut() {
     const transactionYear = transactionDate.getFullYear();
     const transactionMonth = transactionDate.getMonth() + 1;
     
-    const matchesYear = selectedYear === "all" || transactionYear === parseInt(selectedYear);
+    const matchesYear = transactionYear === parseInt(selectedYear);
     const matchesMonth = selectedMonth === "all" || transactionMonth === parseInt(selectedMonth);
     
     return matchesSearch && matchesYear && matchesMonth;
@@ -244,20 +244,23 @@ export default function StockOut() {
 
   // Print functionality
   const handlePrint = () => {
-    if (!filteredTransactions.length) {
+    if (selectedTransactions.length === 0) {
       toast({
         title: "Thông báo",
-        description: "Không có dữ liệu để in",
+        description: "Vui lòng chọn các giao dịch cần in",
         variant: "destructive",
       });
       return;
     }
 
+    // Get selected transactions data
+    const selectedTransactionsData = filteredTransactions.filter(t => selectedTransactions.includes(t.id));
+
     // Create print content
     const printContent = `
       <html>
         <head>
-          <title>Danh sách xuất kho</title>
+          <title>Phiếu Xuất Kho</title>
           <style>
             body { font-family: Arial, sans-serif; margin: 20px; }
             h1 { text-align: center; color: #8B4513; margin-bottom: 30px; }
@@ -276,11 +279,11 @@ export default function StockOut() {
           </style>
         </head>
         <body>
-          <h1>DANH SÁCH XUẤT KHO</h1>
+          <h1>PHIẾU XUẤT KHO</h1>
           <div class="header-info">
             <p><strong>Lava Tea Shop</strong></p>
             <p>Ngày in: ${formatDisplayDate(new Date().toISOString().split('T')[0])}</p>
-            <p>Tổng số giao dịch: ${filteredTransactions.length}</p>
+            <p>Số giao dịch được chọn: ${selectedTransactionsData.length}</p>
           </div>
           
           ${lowStockItems.length > 0 ? `
@@ -303,7 +306,7 @@ export default function StockOut() {
               </tr>
             </thead>
             <tbody>
-              ${filteredTransactions.map(transaction => {
+              ${selectedTransactionsData.map(transaction => {
                 const item = stockItems?.find(item => item.id === transaction.itemId);
                 return `
                   <tr>
@@ -322,9 +325,9 @@ export default function StockOut() {
           
           <div class="summary">
             <h3>Tóm tắt</h3>
-            <p><strong>Tổng số lượng:</strong> ${stockOutTransactions.reduce((total, t) => total + parseFloat(t.quantity), 0).toLocaleString('vi-VN')} sản phẩm</p>
+            <p><strong>Tổng số lượng:</strong> ${selectedTransactionsData.reduce((total, t) => total + parseFloat(t.quantity), 0).toLocaleString('vi-VN')} sản phẩm</p>
             <p><strong>Tổng giá trị:</strong> ${formatMoney(
-              stockOutTransactions.reduce((total, t) => total + (parseFloat(t.totalPrice || '0')), 0)
+              selectedTransactionsData.reduce((total, t) => total + (parseFloat(t.totalPrice || '0')), 0)
             )}</p>
             <p><strong>Hàng sắp hết:</strong> ${lowStockItems.length} mặt hàng</p>
           </div>
@@ -495,7 +498,6 @@ export default function StockOut() {
                   <SelectValue placeholder="Chọn năm" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tất cả năm</SelectItem>
                   {yearOptions.map((year) => (
                     <SelectItem key={year} value={year.toString()}>
                       {year}
@@ -530,10 +532,10 @@ export default function StockOut() {
               <Button
                 variant="outline"
                 onClick={handlePrint}
-                disabled={filteredTransactions.length === 0}
+                disabled={selectedTransactions.length === 0}
               >
                 <Printer className="w-4 h-4 mr-2" />
-                In dữ liệu
+                In Phiếu Xuất
               </Button>
             </div>
           </div>

@@ -54,7 +54,7 @@ import type { StockItem, StockTransaction } from "@shared/schema";
 export default function StockIn() {
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedYear, setSelectedYear] = useState<string>("all");
+  const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
   const [selectedMonth, setSelectedMonth] = useState<string>("all");
   const [selectedTransactions, setSelectedTransactions] = useState<string[]>([]);
   const [editingTransaction, setEditingTransaction] = useState<StockTransaction | null>(null);
@@ -93,7 +93,7 @@ export default function StockIn() {
     const transactionYear = transactionDate.getFullYear();
     const transactionMonth = transactionDate.getMonth() + 1;
     
-    const matchesYear = selectedYear === "all" || transactionYear === parseInt(selectedYear);
+    const matchesYear = transactionYear === parseInt(selectedYear);
     const matchesMonth = selectedMonth === "all" || transactionMonth === parseInt(selectedMonth);
     
     return matchesSearch && matchesYear && matchesMonth;
@@ -238,20 +238,23 @@ export default function StockIn() {
 
   // Print functionality
   const handlePrint = () => {
-    if (!filteredTransactions.length) {
+    if (selectedTransactions.length === 0) {
       toast({
         title: "Thông báo",
-        description: "Không có dữ liệu để in",
+        description: "Vui lòng chọn các giao dịch cần in",
         variant: "destructive",
       });
       return;
     }
 
+    // Get selected transactions data
+    const selectedTransactionsData = filteredTransactions.filter(t => selectedTransactions.includes(t.id));
+
     // Create print content
     const printContent = `
       <html>
         <head>
-          <title>Danh sách nhập kho</title>
+          <title>Phiếu Nhập Kho</title>
           <style>
             body { font-family: Arial, sans-serif; margin: 20px; }
             h1 { text-align: center; color: #8B4513; margin-bottom: 30px; }
@@ -269,11 +272,11 @@ export default function StockIn() {
           </style>
         </head>
         <body>
-          <h1>DANH SÁCH NHẬP KHO</h1>
+          <h1>PHIẾU NHẬP KHO</h1>
           <div class="header-info">
             <p><strong>Lava Tea Shop</strong></p>
             <p>Ngày in: ${formatDisplayDate(new Date().toISOString().split('T')[0])}</p>
-            <p>Tổng số giao dịch: ${filteredTransactions.length}</p>
+            <p>Số giao dịch được chọn: ${selectedTransactionsData.length}</p>
           </div>
           
           <table>
@@ -289,7 +292,7 @@ export default function StockIn() {
               </tr>
             </thead>
             <tbody>
-              ${filteredTransactions.map(transaction => {
+              ${selectedTransactionsData.map(transaction => {
                 const item = stockItems?.find(item => item.id === transaction.itemId);
                 return `
                   <tr>
@@ -308,9 +311,9 @@ export default function StockIn() {
           
           <div class="summary">
             <h3>Tóm tắt</h3>
-            <p><strong>Tổng số lượng:</strong> ${stockInTransactions.reduce((total, t) => total + parseFloat(t.quantity), 0).toLocaleString('vi-VN')} sản phẩm</p>
+            <p><strong>Tổng số lượng:</strong> ${selectedTransactionsData.reduce((total, t) => total + parseFloat(t.quantity), 0).toLocaleString('vi-VN')} sản phẩm</p>
             <p><strong>Tổng giá trị:</strong> ${formatMoney(
-              stockInTransactions.reduce((total, t) => total + (parseFloat(t.totalPrice || '0')), 0)
+              selectedTransactionsData.reduce((total, t) => total + (parseFloat(t.totalPrice || '0')), 0)
             )}</p>
           </div>
         </body>
@@ -465,7 +468,6 @@ export default function StockIn() {
                   <SelectValue placeholder="Chọn năm" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tất cả năm</SelectItem>
                   {yearOptions.map((year) => (
                     <SelectItem key={year} value={year.toString()}>
                       {year}
@@ -500,10 +502,10 @@ export default function StockIn() {
               <Button
                 variant="outline"
                 onClick={handlePrint}
-                disabled={filteredTransactions.length === 0}
+                disabled={selectedTransactions.length === 0}
               >
                 <Printer className="w-4 h-4 mr-2" />
-                In dữ liệu
+                In Phiếu Nhập
               </Button>
             </div>
           </div>

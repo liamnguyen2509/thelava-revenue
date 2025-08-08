@@ -89,18 +89,19 @@ export default function StockTransactionModal({
     ),
   });
 
-  // Quick add product form
-  const quickAddSchema = insertStockItemSchema.extend({
-    name: z.string().min(1, "Tên hàng hóa là bắt buộc"),
-    unit: z.string().min(1, "Đơn vị là bắt buộc"),
-    unitPrice: z.string().min(1, "Giá thành là bắt buộc"),
-  });
+  // Quick add product form (category removed as requested)
+  const quickAddSchema = insertStockItemSchema
+    .omit({ category: true })
+    .extend({
+      name: z.string().min(1, "Tên hàng hóa là bắt buộc"),
+      unit: z.string().min(1, "Đơn vị là bắt buộc"),
+      unitPrice: z.string().min(1, "Giá thành là bắt buộc"),
+    });
 
-  const quickAddForm = useForm<InsertStockItem>({
+  const quickAddForm = useForm<Omit<InsertStockItem, 'category'>>({
     resolver: zodResolver(quickAddSchema),
     defaultValues: {
       name: "",
-      category: "",
       unit: "",
       unitPrice: "",
       currentStock: "0",
@@ -261,9 +262,10 @@ export default function StockTransactionModal({
     },
   });
 
-  const handleCreateProduct = (data: InsertStockItem) => {
+  const handleCreateProduct = (data: Omit<InsertStockItem, 'category'>) => {
     const parsedData = {
       ...data,
+      category: "", // Default empty category since it's not required
       unitPrice: parseInputAmount(data.unitPrice || "0"),
       currentStock: data.currentStock || "0",
       minStock: data.minStock || "0",
@@ -380,104 +382,84 @@ export default function StockTransactionModal({
                       </Button>
                     </div>
 
-                    {/* Quick Add Product Form */}
+                    {/* Quick Add Product Form - Restructured to avoid form nesting */}
                     {showQuickAdd && (
                       <Card className="border-dashed">
                         <CardHeader className="pb-3">
                           <CardTitle className="text-sm">Thêm sản phẩm nhanh</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
-                          <Form {...quickAddForm}>
-                            <form onSubmit={quickAddForm.handleSubmit(handleCreateProduct)} className="space-y-3">
-                              <div className="grid grid-cols-2 gap-3">
-                                <FormField
-                                  control={quickAddForm.control}
-                                  name="name"
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <FormLabel className="text-xs">Tên sản phẩm *</FormLabel>
-                                      <FormControl>
-                                        <Input placeholder="Tên sản phẩm" {...field} className="h-8" />
-                                      </FormControl>
-                                      <FormMessage className="text-xs" />
-                                    </FormItem>
-                                  )}
+                          <div className="space-y-3">
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="text-xs font-medium">Tên sản phẩm *</label>
+                                <Input
+                                  placeholder="Tên sản phẩm"
+                                  value={quickAddForm.watch("name") || ""}
+                                  onChange={(e) => quickAddForm.setValue("name", e.target.value)}
+                                  className="h-8 mt-1"
                                 />
-                                <FormField
-                                  control={quickAddForm.control}
-                                  name="unit"
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <FormLabel className="text-xs">Đơn vị *</FormLabel>
-                                      <FormControl>
-                                        <Input placeholder="kg, lít, hộp..." {...field} className="h-8" />
-                                      </FormControl>
-                                      <FormMessage className="text-xs" />
-                                    </FormItem>
-                                  )}
-                                />
+                                {quickAddForm.formState.errors.name && (
+                                  <p className="text-xs text-red-500 mt-1">{quickAddForm.formState.errors.name.message}</p>
+                                )}
                               </div>
-                              <div className="grid grid-cols-2 gap-3">
-                                <FormField
-                                  control={quickAddForm.control}
-                                  name="unitPrice"
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <FormLabel className="text-xs">Giá thành *</FormLabel>
-                                      <FormControl>
-                                        <Input
-                                          placeholder="0"
-                                          {...field}
-                                          className="h-8"
-                                          value={field.value ? formatInputAmount(field.value) : ""}
-                                          onChange={(e) => {
-                                            const rawValue = parseInputAmount(e.target.value);
-                                            field.onChange(rawValue);
-                                          }}
-                                        />
-                                      </FormControl>
-                                      <FormMessage className="text-xs" />
-                                    </FormItem>
-                                  )}
+                              <div>
+                                <label className="text-xs font-medium">Đơn vị *</label>
+                                <Input
+                                  placeholder="kg, lít, hộp..."
+                                  value={quickAddForm.watch("unit") || ""}
+                                  onChange={(e) => quickAddForm.setValue("unit", e.target.value)}
+                                  className="h-8 mt-1"
                                 />
-                                <FormField
-                                  control={quickAddForm.control}
-                                  name="category"
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <FormLabel className="text-xs">Danh mục</FormLabel>
-                                      <FormControl>
-                                        <Input placeholder="Danh mục" {...field} className="h-8" />
-                                      </FormControl>
-                                      <FormMessage className="text-xs" />
-                                    </FormItem>
-                                  )}
-                                />
+                                {quickAddForm.formState.errors.unit && (
+                                  <p className="text-xs text-red-500 mt-1">{quickAddForm.formState.errors.unit.message}</p>
+                                )}
                               </div>
-                              <div className="flex gap-2">
-                                <Button
-                                  type="submit"
-                                  size="sm"
-                                  disabled={isCreatingProduct}
-                                  className="bg-tea-brown hover:bg-tea-brown/90 h-8"
-                                >
-                                  {isCreatingProduct ? "Đang tạo..." : "Tạo & Chọn"}
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    setShowQuickAdd(false);
-                                    quickAddForm.reset();
+                            </div>
+                            <div className="grid grid-cols-1 gap-3">
+                              <div>
+                                <label className="text-xs font-medium">Giá thành *</label>
+                                <Input
+                                  placeholder="0"
+                                  value={quickAddForm.watch("unitPrice") ? formatInputAmount(quickAddForm.watch("unitPrice")) : ""}
+                                  onChange={(e) => {
+                                    const rawValue = parseInputAmount(e.target.value);
+                                    quickAddForm.setValue("unitPrice", rawValue);
                                   }}
-                                  className="h-8"
-                                >
-                                  Hủy
-                                </Button>
+                                  className="h-8 mt-1"
+                                />
+                                {quickAddForm.formState.errors.unitPrice && (
+                                  <p className="text-xs text-red-500 mt-1">{quickAddForm.formState.errors.unitPrice.message}</p>
+                                )}
                               </div>
-                            </form>
-                          </Form>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                type="button"
+                                size="sm"
+                                disabled={isCreatingProduct}
+                                onClick={() => {
+                                  const formData = quickAddForm.getValues();
+                                  quickAddForm.handleSubmit(handleCreateProduct)(formData as any);
+                                }}
+                                className="bg-tea-brown hover:bg-tea-brown/90 h-8"
+                              >
+                                {isCreatingProduct ? "Đang tạo..." : "Tạo & Chọn"}
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setShowQuickAdd(false);
+                                  quickAddForm.reset();
+                                }}
+                                className="h-8"
+                              >
+                                Hủy
+                              </Button>
+                            </div>
+                          </div>
                         </CardContent>
                       </Card>
                     )}
@@ -543,10 +525,14 @@ export default function StockTransactionModal({
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
-                          selected={field.value ? new Date(field.value) : undefined}
+                          selected={field.value ? new Date(field.value + 'T00:00:00') : undefined}
                           onSelect={(date) => {
                             if (date) {
-                              field.onChange(date.toISOString().split('T')[0]);
+                              // Fix date selection issue by ensuring proper timezone handling
+                              const year = date.getFullYear();
+                              const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                              const day = date.getDate().toString().padStart(2, '0');
+                              field.onChange(`${year}-${month}-${day}`);
                             }
                           }}
                           disabled={(date) =>
