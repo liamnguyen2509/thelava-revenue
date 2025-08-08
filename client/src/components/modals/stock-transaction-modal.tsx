@@ -29,8 +29,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useFormattedData } from "@/hooks/useFormattedData";
 import { insertStockTransactionSchema } from "@shared/schema";
-import type { InsertStockTransaction, StockItem } from "@shared/schema";
+import type { InsertStockTransaction, StockItem, SystemSetting } from "@shared/schema";
+import { z } from "zod";
 
 interface StockTransactionModalProps {
   open: boolean;
@@ -45,31 +47,60 @@ export default function StockTransactionModal({
 }: StockTransactionModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { formatInputAmount, parseInputAmount, formatDisplayDate, currency } = useFormattedData();
 
   const { data: stockItems } = useQuery<StockItem[]>({
     queryKey: ["/api/stock/items"],
   });
 
+  const { data: systemSettings = [] } = useQuery<SystemSetting[]>({
+    queryKey: ["/api/settings/system"],
+  });
+
+  // Enhanced validation schema
+  const enhancedSchema = insertStockTransactionSchema.extend({
+    itemId: z.string().min(1, "Vui lòng chọn hàng hóa"),
+    quantity: z.string().refine(
+      (val) => {
+        const num = parseFloat(val);
+        return !isNaN(num) && num > 0;
+      },
+      "Số lượng phải lớn hơn 0"
+    ),
+  });
+
   const form = useForm<InsertStockTransaction>({
-    resolver: zodResolver(insertStockTransactionSchema),
+    resolver: zodResolver(enhancedSchema),
     defaultValues: {
-      itemId: undefined,
+      itemId: "",
       type: transactionType,
-      quantity: "0",
-      unitPrice: "0",
-      totalPrice: "0",
+      quantity: "",
+      unitPrice: "",
+      totalPrice: "",
       notes: "",
       transactionDate: new Date().toISOString().split('T')[0],
     },
   });
 
-  // Watch quantity and unitPrice to auto-calculate totalPrice
+  // Watch quantity, unitPrice, and itemId for calculations and auto-population
   const watchedQuantity = form.watch("quantity");
   const watchedUnitPrice = form.watch("unitPrice");
+  const watchedItemId = form.watch("itemId");
 
+  // Auto-populate unit price when item is selected
+  React.useEffect(() => {
+    if (watchedItemId && stockItems) {
+      const selectedItem = stockItems.find(item => item.id === watchedItemId);
+      if (selectedItem && selectedItem.unitPrice) {
+        form.setValue("unitPrice", selectedItem.unitPrice);
+      }
+    }
+  }, [watchedItemId, stockItems, form]);
+
+  // Auto-calculate total price
   React.useEffect(() => {
     const quantity = parseFloat(watchedQuantity || "0");
-    const unitPrice = parseFloat(watchedUnitPrice || "0");
+    const unitPrice = parseFloat(parseInputAmount(watchedUnitPrice || "0"));
     
     if (quantity > 0 && unitPrice > 0) {
       const total = quantity * unitPrice;
@@ -77,7 +108,7 @@ export default function StockTransactionModal({
     } else {
       form.setValue("totalPrice", "");
     }
-  }, [watchedQuantity, watchedUnitPrice, form]);
+  }, [watchedQuantity, watchedUnitPrice, form, parseInputAmount]);
 
   const createMutation = useMutation({
     mutationFn: async (data: InsertStockTransaction) => {
@@ -108,7 +139,35 @@ export default function StockTransactionModal({
   });
 
   const onSubmit = (data: InsertStockTransaction) => {
-    createMutation.mutate(data);
+    // Parse unit price from formatted display value
+    const parsedData = {
+      ...data,
+      unitPrice: parseInputAmount(data.unitPrice || "0"),
+      quantity: data.quantity,
+      totalPrice: data.totalPrice,
+    };
+    createMutation.mutate(parsedData);
+  };
+
+  // Helper function to format date for display (dd/mm/yyyy)
+  const formatDateForDisplay = (dateString: string): string => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  // Helper function to parse dd/mm/yyyy to yyyy-mm-dd
+  const parseDateFromDisplay = (displayDate: string): string => {
+    if (!displayDate) return new Date().toISOString().split('T')[0];
+    const parts = displayDate.split('/');
+    if (parts.length === 3) {
+      const [day, month, year] = parts;
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
+    return new Date().toISOString().split('T')[0];
   };
 
   const isPending = createMutation.isPending;
@@ -149,7 +208,7 @@ export default function StockTransactionModal({
                       {stockItems?.filter(item => item.id && item.id.trim() !== '').map((item) => (
                         <SelectItem key={item.id} value={item.id}>
                           {item.name} - {item.unit}
-                          {item.unitPrice && ` - ${parseFloat(item.unitPrice).toLocaleString('vi-VN')} VNĐ`}
+                          {item.unitPrice && ` - ${formatInputAmount(item.unitPrice)} ${currency}`}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -165,15 +224,21 @@ export default function StockTransactionModal({
                 name="quantity"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Số lượng</FormLabel>
+                    <FormLabel>Số lượng *</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
-                        placeholder="0"
-                        step="0.01"
+                        placeholder="Nhập số lượng"
+                        step="1"
                         min="0"
                         {...field}
                         value={field.value || ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value === "" || parseInt(value) >= 0) {
+                            field.onChange(value);
+                          }
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -189,9 +254,26 @@ export default function StockTransactionModal({
                     <FormLabel>Ngày giao dịch</FormLabel>
                     <FormControl>
                       <Input
-                        type="date"
+                        type="text"
+                        placeholder="dd/mm/yyyy"
                         {...field}
-                        value={field.value || ""}
+                        value={field.value ? formatDateForDisplay(field.value) : ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          // Allow only numbers and slashes
+                          const cleaned = value.replace(/[^0-9\/]/g, '');
+                          if (cleaned.length <= 10) {
+                            const parsed = parseDateFromDisplay(cleaned.length === 10 ? cleaned : new Date().toISOString().split('T')[0]);
+                            field.onChange(parsed);
+                          }
+                        }}
+                        onBlur={(e) => {
+                          const value = e.target.value;
+                          if (value.length === 10) {
+                            const parsed = parseDateFromDisplay(value);
+                            field.onChange(parsed);
+                          }
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -206,15 +288,17 @@ export default function StockTransactionModal({
                 name="unitPrice"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Giá đơn vị (VNĐ)</FormLabel>
+                    <FormLabel>Giá đơn vị ({currency})</FormLabel>
                     <FormControl>
                       <Input
-                        type="number"
+                        type="text"
                         placeholder="0"
-                        step="0.01"
-                        min="0"
                         {...field}
-                        value={field.value || ""}
+                        value={field.value ? formatInputAmount(field.value) : ""}
+                        onChange={(e) => {
+                          const rawValue = parseInputAmount(e.target.value);
+                          field.onChange(rawValue);
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -227,16 +311,14 @@ export default function StockTransactionModal({
                 name="totalPrice"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Tổng tiền (VNĐ)</FormLabel>
+                    <FormLabel>Tổng tiền ({currency})</FormLabel>
                     <FormControl>
                       <Input
-                        type="number"
+                        type="text"
                         placeholder="0"
-                        step="0.01"
-                        min="0"
                         readOnly
                         {...field}
-                        value={field.value || ""}
+                        value={field.value ? formatInputAmount(field.value) : ""}
                         className="bg-gray-50"
                       />
                     </FormControl>
