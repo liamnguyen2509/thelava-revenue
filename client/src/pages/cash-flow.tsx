@@ -58,10 +58,36 @@ export default function CashFlow() {
     "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12"
   ];
 
+  // Function to detect mobile devices
+  const isMobile = () => {
+    return window.innerWidth < 768; // md breakpoint in Tailwind
+  };
+
+  // Function to convert numbers to Vietnamese abbreviated format
+  const formatNumberToVietnamese = (amount: number) => {
+    const absAmount = Math.abs(amount);
+    
+    if (absAmount >= 1000000) {
+      const millions = amount / 1000000;
+      return `${millions.toFixed(millions % 1 === 0 ? 0 : 1)} triệu`;
+    } else if (absAmount >= 1000) {
+      const thousands = amount / 1000;
+      return `${thousands.toFixed(thousands % 1 === 0 ? 0 : 1)} nghìn`;
+    } else {
+      return Math.round(amount).toString();
+    }
+  };
+
   const formatCurrency = (amount: number) => {
-    const currencySetting = systemSettings.find(s => s.key === "currency");
-    const currency = currencySetting?.value || "VNĐ";
-    return Math.round(amount).toLocaleString('vi-VN').replace(/,/g, '.') + " " + currency;
+    if (isMobile()) {
+      // Mobile format: abbreviated Vietnamese numbers without currency
+      return formatNumberToVietnamese(amount);
+    } else {
+      // Desktop format: full numbers with currency
+      const currencySetting = systemSettings.find(s => s.key === "currency");
+      const currency = currencySetting?.value || "VNĐ";
+      return Math.round(amount).toLocaleString('vi-VN').replace(/,/g, '.') + " " + currency;
+    }
   };
 
   // Helper function to get percentage for allocation account
