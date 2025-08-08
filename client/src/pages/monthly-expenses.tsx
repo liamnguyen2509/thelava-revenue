@@ -415,14 +415,58 @@ export default function MonthlyExpenses() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-tea-brown">Chi phí hàng tháng</h1>
-        <p className="text-tea-brown/70 mt-2 text-sm sm:text-base">Quản lý chi phí hàng tháng của tiệm</p>
+      {/* Page Title */}
+      <div className="mb-4">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Chi phí hàng tháng</h1>
+        <p className="text-gray-600 text-sm sm:text-base">Quản lý chi phí hàng tháng của tiệm</p>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-4 items-center">
+      {/* Mobile Layout: Filters and Add Button */}
+      <div className="md:hidden space-y-4 mb-6">
+        {/* Filters Row */}
+        <div className="flex gap-4">
+          <div className="flex-1">
+            <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {years.map(year => (
+                  <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex-1">
+            <Select value={selectedMonth.toString()} onValueChange={(value) => setSelectedMonth(parseInt(value))}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {months.map(month => (
+                  <SelectItem key={month.value} value={month.value.toString()}>{month.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        
+        {/* Add Button */}
+        <Button
+          onClick={() => {
+            setEditingExpense(null);
+            resetForm();
+            setIsModalOpen(true);
+          }}
+          className="bg-tea-brown hover:bg-tea-brown/90 w-full"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Thêm khoản chi
+        </Button>
+      </div>
+
+      {/* Desktop Layout: Same as before */}
+      <div className="hidden md:flex flex-wrap gap-4 items-center">
         <div className="flex items-center gap-2">
           <Calendar className="h-4 w-4 text-tea-brown" />
           <Label htmlFor="year-select">Năm:</Label>
@@ -508,38 +552,50 @@ export default function MonthlyExpenses() {
       {/* Expense Table */}
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle>Danh sách chi tiêu</CardTitle>
-              <p className="text-sm text-gray-600 mt-1">
-                Hiển thị chi tiêu tháng {selectedMonth}/{selectedYear}
-              </p>
-            </div>
-            <div className="flex gap-2">
-              {selectedExpenses.length > 0 && (
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={handleDeleteMultiple}
-                  disabled={deleteMultipleMutation.isPending}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Xóa ({selectedExpenses.length})
-                </Button>
-              )}
+          <CardTitle>Danh sách chi tiêu</CardTitle>
+          <p className="text-sm text-gray-600 mt-1">
+            Hiển thị chi tiêu tháng {selectedMonth}/{selectedYear}
+          </p>
+          {/* Desktop Add Button */}
+          <div className="hidden md:flex gap-2 mt-4">
+            {selectedExpenses.length > 0 && (
               <Button
-                onClick={() => {
-                  setEditingExpense(null);
-                  resetForm();
-                  setIsModalOpen(true);
-                }}
-                className="bg-tea-brown hover:bg-tea-brown/90"
+                variant="destructive"
+                size="sm"
+                onClick={handleDeleteMultiple}
+                disabled={deleteMultipleMutation.isPending}
               >
-                <Plus className="h-4 w-4 mr-2" />
-                Thêm khoản chi
+                <Trash2 className="h-4 w-4 mr-2" />
+                Xóa ({selectedExpenses.length})
+              </Button>
+            )}
+            <Button
+              onClick={() => {
+                setEditingExpense(null);
+                resetForm();
+                setIsModalOpen(true);
+              }}
+              className="bg-tea-brown hover:bg-tea-brown/90"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Thêm khoản chi
+            </Button>
+          </div>
+          {/* Mobile Bulk Delete Button */}
+          {selectedExpenses.length > 0 && (
+            <div className="md:hidden mt-4">
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleDeleteMultiple}
+                disabled={deleteMultipleMutation.isPending}
+                className="w-full"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Xóa ({selectedExpenses.length}) mục đã chọn
               </Button>
             </div>
-          </div>
+          )}
         </CardHeader>
         <CardContent>
           <div className="mobile-table-container">
@@ -864,57 +920,115 @@ export default function MonthlyExpenses() {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-6">
-          <div className="text-sm text-gray-700">
-            Hiển thị {startIndex + 1}-{Math.min(endIndex, sortedExpenses.length)} trong {sortedExpenses.length} kết quả
+        <div className="mt-6">
+          {/* Desktop: Show result count and pagination on same row */}
+          <div className="hidden md:flex items-center justify-between">
+            <div className="text-sm text-gray-700">
+              Hiển thị {startIndex + 1}-{Math.min(endIndex, sortedExpenses.length)} trong {sortedExpenses.length} kết quả
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Trước
+              </Button>
+              
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(page => {
+                  return page === 1 || page === totalPages || 
+                         (page >= currentPage - 1 && page <= currentPage + 1);
+                })
+                .map((page, index, filteredPages) => {
+                  const showLeftEllipsis = index === 1 && filteredPages[0] === 1 && filteredPages[1] > 2;
+                  const showRightEllipsis = index === filteredPages.length - 2 && 
+                    filteredPages[filteredPages.length - 1] === totalPages && 
+                    filteredPages[filteredPages.length - 2] < totalPages - 1;
+                  
+                  return (
+                    <div key={page} className="flex items-center">
+                      {showLeftEllipsis && <span className="px-2">...</span>}
+                      <Button
+                        variant={currentPage === page ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(page)}
+                        className={currentPage === page ? "bg-tea-brown hover:bg-tea-brown/90" : ""}
+                      >
+                        {page}
+                      </Button>
+                      {showRightEllipsis && <span className="px-2">...</span>}
+                    </div>
+                  );
+                })}
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+              >
+                Sau
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Trước
-            </Button>
-            
-            {Array.from({ length: totalPages }, (_, i) => i + 1)
-              .filter(page => {
-                return page === 1 || page === totalPages || 
-                       (page >= currentPage - 1 && page <= currentPage + 1);
-              })
-              .map((page, index, filteredPages) => {
-                const showLeftEllipsis = index === 1 && filteredPages[0] === 1 && filteredPages[1] > 2;
-                const showRightEllipsis = index === filteredPages.length - 2 && 
-                  filteredPages[filteredPages.length - 1] === totalPages && 
-                  filteredPages[filteredPages.length - 2] < totalPages - 1;
-                
-                return (
-                  <div key={page} className="flex items-center">
-                    {showLeftEllipsis && <span className="px-2">...</span>}
-                    <Button
-                      variant={currentPage === page ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setCurrentPage(page)}
-                      className={currentPage === page ? "bg-tea-brown hover:bg-tea-brown/90" : ""}
-                    >
-                      {page}
-                    </Button>
-                    {showRightEllipsis && <span className="px-2">...</span>}
-                  </div>
-                );
-              })}
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-            >
-              Sau
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+          
+          {/* Mobile: Center pagination buttons and result count below */}
+          <div className="md:hidden space-y-3">
+            {/* Pagination Controls */}
+            <div className="flex items-center justify-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(page => {
+                  return page === 1 || page === totalPages || 
+                         (page >= currentPage - 1 && page <= currentPage + 1);
+                })
+                .map((page, index, filteredPages) => {
+                  const showLeftEllipsis = index === 1 && filteredPages[0] === 1 && filteredPages[1] > 2;
+                  const showRightEllipsis = index === filteredPages.length - 2 && 
+                    filteredPages[filteredPages.length - 1] === totalPages && 
+                    filteredPages[filteredPages.length - 2] < totalPages - 1;
+                  
+                  return (
+                    <div key={page} className="flex items-center">
+                      {showLeftEllipsis && <span className="px-2 text-xs">...</span>}
+                      <Button
+                        variant={currentPage === page ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(page)}
+                        className={currentPage === page ? "bg-tea-brown hover:bg-tea-brown/90" : ""}
+                      >
+                        {page}
+                      </Button>
+                      {showRightEllipsis && <span className="px-2 text-xs">...</span>}
+                    </div>
+                  );
+                })}
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+            {/* Result Count Below */}
+            <div className="text-center text-xs text-gray-500">
+              Hiển thị {startIndex + 1}-{Math.min(endIndex, sortedExpenses.length)} trong {sortedExpenses.length} kết quả
+            </div>
           </div>
         </div>
       )}

@@ -230,11 +230,31 @@ export default function StockOverview() {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+      {/* Page Title */}
+      <div className="mb-4">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Tổng quan kho hàng</h1>
+        <p className="text-gray-600 text-sm sm:text-base">Theo dõi tình trạng kho hàng tổng thể</p>
+      </div>
+
+      {/* Mobile Layout: Add Button */}
+      <div className="md:hidden space-y-4 mb-6">
+        {/* Add Button */}
+        <Button 
+          onClick={() => {
+            setEditingItem(null);
+            setIsStockItemModalOpen(true);
+          }}
+          className="bg-tea-brown hover:bg-tea-brown/90 w-full"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Thêm hàng hóa
+        </Button>
+      </div>
+
+      {/* Desktop Layout: Same as before */}
+      <div className="hidden md:flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Tổng quan kho hàng</h1>
-          <p className="text-gray-600 text-sm sm:text-base">Theo dõi tình trạng kho hàng tổng thể</p>
+          {/* Empty for layout balance */}
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
           {selectedItems.length > 0 && (
@@ -319,6 +339,20 @@ export default function StockOverview() {
       <Card>
         <CardHeader>
           <CardTitle>Danh sách hàng hóa</CardTitle>
+          {/* Mobile Bulk Delete Button */}
+          {selectedItems.length > 0 && (
+            <div className="md:hidden mt-4">
+              <Button 
+                onClick={handleBulkDelete}
+                variant="destructive"
+                disabled={bulkDeleteMutation.isPending}
+                className="w-full"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Xóa {selectedItems.length} mục đã chọn
+              </Button>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           {stockItems && stockItems.length > 0 ? (

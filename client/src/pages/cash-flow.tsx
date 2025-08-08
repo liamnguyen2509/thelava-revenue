@@ -201,17 +201,44 @@ export default function CashFlow() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      {/* Page Title */}
+      <div className="mb-4">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Quản lý dòng tiền</h1>
+        <p className="text-gray-600 text-sm sm:text-base">Theo dõi và quản lý dòng tiền theo năm</p>
+      </div>
+
+      {/* Mobile Layout: Filters and Add Button */}
+      <div className="md:hidden space-y-4 mb-6">
+        {/* Year Filter */}
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Quản lý dòng tiền</h1>
-          <p className="text-gray-600 text-sm sm:text-base">Theo dõi và quản lý dòng tiền theo năm</p>
+          <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {years.map((year) => (
+                <SelectItem key={year} value={year.toString()}>
+                  {year}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
+        
+        {/* Add Button */}
+        <Button onClick={() => setIsExpenseModalOpen(true)} className="bg-tea-brown hover:bg-tea-brown/90 w-full">
+          <Plus className="w-4 h-4 mr-2" />
+          Thêm khoản chi
+        </Button>
+      </div>
+
+      {/* Desktop Layout: Same as before */}
+      <div className="hidden md:flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
             <Label htmlFor="year" className="text-sm">Năm:</Label>
             <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
-              <SelectTrigger className="w-28 sm:w-32">
+              <SelectTrigger className="w-32">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -223,11 +250,11 @@ export default function CashFlow() {
               </SelectContent>
             </Select>
           </div>
-          <Button onClick={() => setIsExpenseModalOpen(true)} className="bg-tea-brown hover:bg-tea-brown/90 w-full sm:w-auto">
-            <Plus className="w-4 h-4 mr-2" />
-            <span className="sm:inline">Thêm khoản chi</span>
-          </Button>
         </div>
+        <Button onClick={() => setIsExpenseModalOpen(true)} className="bg-tea-brown hover:bg-tea-brown/90">
+          <Plus className="w-4 h-4 mr-2" />
+          Thêm khoản chi
+        </Button>
       </div>
 
       {/* Revenue by Year Table */}

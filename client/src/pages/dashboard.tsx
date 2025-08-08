@@ -177,10 +177,10 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
-      {/* Dashboard Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Tổng quan</h1>
-        <p className="text-gray-600">Theo dõi doanh thu và hiệu suất kinh doanh của cửa hàng</p>
+      {/* Page Title */}
+      <div className="mb-4">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Tổng quan</h1>
+        <p className="text-gray-600 text-sm sm:text-base">Theo dõi doanh thu và hiệu suất kinh doanh của cửa hàng</p>
       </div>
 
       {/* Summary Cards */}
@@ -407,10 +407,10 @@ export default function Dashboard() {
               <CardTitle>Thao tác nhanh</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Button
                   variant="outline"
-                  className="p-4 h-auto flex flex-col items-center space-y-2"
+                  className="p-4 h-auto flex flex-row sm:flex-col items-center space-x-3 sm:space-x-0 sm:space-y-2"
                   onClick={() => setIsExpenseModalOpen(true)}
                 >
                   <Plus className="text-tea-brown w-6 h-6" />
@@ -418,7 +418,7 @@ export default function Dashboard() {
                 </Button>
                 <Button
                   variant="outline"
-                  className="p-4 h-auto flex flex-col items-center space-y-2"
+                  className="p-4 h-auto flex flex-row sm:flex-col items-center space-x-3 sm:space-x-0 sm:space-y-2"
                   onClick={() => setIsRevenueModalOpen(true)}
                 >
                   <Coins className="text-tea-brown w-6 h-6" />
@@ -426,7 +426,7 @@ export default function Dashboard() {
                 </Button>
                 <Button
                   variant="outline"
-                  className="p-4 h-auto flex flex-col items-center space-y-2"
+                  className="p-4 h-auto flex flex-row sm:flex-col items-center space-x-3 sm:space-x-0 sm:space-y-2"
                   onClick={() => setIsStockInModalOpen(true)}
                 >
                   <Package className="text-tea-brown w-6 h-6" />
@@ -434,7 +434,7 @@ export default function Dashboard() {
                 </Button>
                 <Button
                   variant="outline"
-                  className="p-4 h-auto flex flex-col items-center space-y-2"
+                  className="p-4 h-auto flex flex-row sm:flex-col items-center space-x-3 sm:space-x-0 sm:space-y-2"
                   onClick={() => setIsStockOutModalOpen(true)}
                 >
                   <TrendingDown className="text-tea-brown w-6 h-6" />
