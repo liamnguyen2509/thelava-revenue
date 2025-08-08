@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import CashFlowChart from "@/components/charts/cash-flow-chart";
 import RevenueChart from "@/components/charts/revenue-chart";
-import { ExpenseModal } from "@/components/modals/expense-modal";
+import ReserveExpenditureModal from "@/components/modals/reserve-expenditure-modal";
+import RevenueModal from "@/components/modals/revenue-modal";
 import { useState } from "react";
 import { useFormattedData } from "@/hooks/useFormattedData";
 import {
@@ -28,7 +29,8 @@ interface ExpenditureSummaryData {
 }
 
 export default function Dashboard() {
-  const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
+  const [isExpenditureModalOpen, setIsExpenditureModalOpen] = useState(false);
+  const [isRevenueModalOpen, setIsRevenueModalOpen] = useState(false);
   const { formatMoney } = useFormattedData();
   const currentYear = new Date().getFullYear();
 
@@ -357,14 +359,15 @@ export default function Dashboard() {
                 <Button
                   variant="outline"
                   className="p-4 h-auto flex flex-col items-center space-y-2"
-                  onClick={() => setIsExpenseModalOpen(true)}
+                  onClick={() => setIsExpenditureModalOpen(true)}
                 >
                   <Plus className="text-tea-brown w-6 h-6" />
-                  <span className="text-sm font-medium">Thêm chi phí</span>
+                  <span className="text-sm font-medium">Thêm khoản chi</span>
                 </Button>
                 <Button
                   variant="outline"
                   className="p-4 h-auto flex flex-col items-center space-y-2"
+                  onClick={() => setIsRevenueModalOpen(true)}
                 >
                   <Coins className="text-tea-brown w-6 h-6" />
                   <span className="text-sm font-medium">Cập nhật doanh thu</span>
@@ -395,10 +398,15 @@ export default function Dashboard() {
         <RevenueChart />
       </div>
 
-      {/* Expense Modal */}
-      <ExpenseModal
-        isOpen={isExpenseModalOpen}
-        onClose={() => setIsExpenseModalOpen(false)}
+      {/* Modals */}
+      <ReserveExpenditureModal
+        open={isExpenditureModalOpen}
+        onOpenChange={setIsExpenditureModalOpen}
+      />
+      
+      <RevenueModal
+        open={isRevenueModalOpen}
+        onOpenChange={setIsRevenueModalOpen}
       />
     </div>
   );
