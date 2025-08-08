@@ -282,7 +282,7 @@ export default function ReserveFunds() {
           ];
           const style = colorStyles[index % colorStyles.length];
           const IconComponent = getAccountTypeIcon(index);
-          const amount = expenditureSummary?.byAccount?.[account.name] || 0;
+          const amount = summary?.byAccount?.[account.name] || 0;
           
           return (
             <Card key={account.id} className={`${style.border} ${style.bg}`}>
@@ -295,25 +295,32 @@ export default function ReserveFunds() {
                   {amount ? formatCurrency(amount) : "0"}
                 </div>
                 <p className={`text-xs ${style.icon}`}>
-                  Đã chi năm {selectedYear}
+                  Đã phân bổ năm {selectedYear}
                 </p>
               </CardContent>
             </Card>
           );
         })}
 
-        {/* Tổng chi */}
+        {/* Tổng phân bổ */}
         <Card className="border-tea-brown bg-gradient-to-br from-tea-light to-tea-cream">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-tea-brown">Tổng chi</CardTitle>
+            <CardTitle className="text-sm font-medium text-tea-brown">Tổng phân bổ</CardTitle>
             <Wallet className="h-4 w-4 text-tea-brown" />
           </CardHeader>
           <CardContent>
             <div className="text-xl font-bold text-tea-brown">
-              {expenditureSummary?.totalExpended ? formatCurrency(expenditureSummary.totalExpended) : "0"}
+              {(() => {
+                // Calculate total allocation for all accounts (including marketing)
+                const totalAllocation = allocationAccounts.reduce((sum, account) => {
+                  if (account.name === "Cổ tức") return sum; // Exclude dividend
+                  return sum + (summary?.byAccount?.[account.name] || 0);
+                }, 0);
+                return totalAllocation ? formatCurrency(totalAllocation) : "0";
+              })()}
             </div>
             <p className="text-xs text-tea-brown/70">
-              Tổng chi năm {selectedYear}
+              Tổng phân bổ năm {selectedYear}
             </p>
           </CardContent>
         </Card>
