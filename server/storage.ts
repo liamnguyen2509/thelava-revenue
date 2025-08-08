@@ -126,14 +126,30 @@ export class DatabaseStorage implements IStorage {
     const currentYear = new Date().getFullYear();
     const currentMonth = new Date().getMonth() + 1;
     
-    const annualRevenues = await db.select().from(revenues).where(eq(revenues.year, currentYear));
-    const monthlyRevenues = await db.select().from(revenues)
-      .where(and(eq(revenues.year, currentYear), eq(revenues.month, currentMonth)));
-    
-    const annual = annualRevenues.reduce((sum: number, r: Revenue) => sum + parseFloat(r.amount), 0);
-    const monthly = monthlyRevenues.reduce((sum: number, r: Revenue) => sum + parseFloat(r.amount), 0);
-    
-    return { annual, monthly };
+    try {
+      // Get all revenues for current year (sum of all monthly revenues in cash flow)
+      const annualRevenues = await db.select().from(revenues).where(eq(revenues.year, currentYear));
+      const monthlyRevenues = await db.select().from(revenues)
+        .where(and(eq(revenues.year, currentYear), eq(revenues.month, currentMonth)));
+      
+      // Calculate annual total from all monthly entries in cash flow page
+      const annual = annualRevenues.reduce((sum: number, r: Revenue) => {
+        const amount = parseFloat(r.amount) || 0;
+        return sum + amount;
+      }, 0);
+      
+      // Calculate current month total
+      const monthly = monthlyRevenues.reduce((sum: number, r: Revenue) => {
+        const amount = parseFloat(r.amount) || 0;
+        return sum + amount;
+      }, 0);
+      
+      console.log(`Revenue summary - Annual: ${annual}, Monthly: ${monthly}`);
+      return { annual, monthly };
+    } catch (error) {
+      console.error('Error getting revenue summary:', error);
+      return { annual: 0, monthly: 0 };
+    }
   }
 
   async getExpenses(year: number, month?: number): Promise<Expense[]> {
@@ -169,12 +185,21 @@ export class DatabaseStorage implements IStorage {
     const currentYear = new Date().getFullYear();
     const currentMonth = new Date().getMonth() + 1;
     
-    const monthlyExpenses = await db.select().from(expenses)
-      .where(and(eq(expenses.year, currentYear), eq(expenses.month, currentMonth)));
-    
-    const monthly = monthlyExpenses.reduce((sum: number, e: Expense) => sum + parseFloat(e.amount), 0);
-    
-    return { monthly };
+    try {
+      const monthlyExpenses = await db.select().from(expenses)
+        .where(and(eq(expenses.year, currentYear), eq(expenses.month, currentMonth)));
+      
+      const monthly = monthlyExpenses.reduce((sum: number, e: Expense) => {
+        const amount = parseFloat(e.amount) || 0;
+        return sum + amount;
+      }, 0);
+      
+      console.log(`Expense summary - Monthly: ${monthly}`);
+      return { monthly };
+    } catch (error) {
+      console.error('Error getting expense summary:', error);
+      return { monthly: 0 };
+    }
   }
 
   async getStockItems(): Promise<StockItem[]> {
