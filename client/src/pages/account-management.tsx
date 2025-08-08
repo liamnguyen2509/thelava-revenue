@@ -6,18 +6,37 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { UserCog, Lock, User, Save } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { UserCog, Lock, User, Save, Plus, Users, ChevronDown, ChevronRight } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import type { User as UserType } from "@shared/schema";
 
 export default function AccountManagement() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  
+  // New user form
+  const [newUserForm, setNewUserForm] = useState({
+    phone: "",
+    username: "",
+    name: "",
+    password: "",
+    role: "admin"
+  });
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+
+  // Fetch all users
+  const { data: allUsers = [] } = useQuery<(UserType & { password?: never })[]>({
+    queryKey: ["/api/users"],
+  });
 
   // Set display name from current user
   useState(() => {
@@ -97,6 +116,62 @@ export default function AccountManagement() {
     }
 
     changePasswordMutation.mutate({ currentPassword, newPassword });
+  };
+
+  const createUserMutation = useMutation({
+    mutationFn: async (data: { phone: string; username: string; name: string; password: string; role: string }) => {
+      const res = await apiRequest("/api/users", "POST", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      setNewUserForm({ phone: "", username: "", name: "", password: "", role: "admin" });
+      setShowAddUserModal(false);
+      toast({ title: "Thành công", description: "Tạo tài khoản thành công" });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Lỗi",
+        description: error.message || "Không thể tạo tài khoản",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCreateUser = () => {
+    if (!newUserForm.phone || !newUserForm.username || !newUserForm.name || !newUserForm.password) {
+      toast({
+        title: "Lỗi",
+        description: "Vui lòng điền đầy đủ thông tin",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newUserForm.password.length < 6) {
+      toast({
+        title: "Lỗi",
+        description: "Mật khẩu phải có ít nhất 6 ký tự",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    createUserMutation.mutate(newUserForm);
+  };
+
+  const toggleRowExpansion = (userId: string) => {
+    const newExpanded = new Set(expandedRows);
+    if (newExpanded.has(userId)) {
+      newExpanded.delete(userId);
+    } else {
+      newExpanded.add(userId);
+    }
+    setExpandedRows(newExpanded);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('vi-VN');
   };
 
   return (
@@ -222,6 +297,185 @@ export default function AccountManagement() {
               <p>{user?.createdAt ? new Date(user.createdAt).toLocaleDateString('vi-VN') : 'Không rõ'}</p>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* User Management Section */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Danh sách tài khoản
+              </CardTitle>
+              <p className="text-sm text-gray-600 mt-1">Quản lý tất cả tài khoản người dùng trong hệ thống</p>
+            </div>
+            <Dialog open={showAddUserModal} onOpenChange={setShowAddUserModal}>
+              <DialogTrigger asChild>
+                <Button className="bg-tea-brown hover:bg-tea-brown/90 w-full sm:w-auto">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Thêm tài khoản
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Thêm tài khoản mới</DialogTitle>
+                  <DialogDescription>
+                    Tạo tài khoản người dùng mới cho hệ thống
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="newPhone">Số điện thoại</Label>
+                    <Input
+                      id="newPhone"
+                      value={newUserForm.phone}
+                      onChange={(e) => setNewUserForm(prev => ({ ...prev, phone: e.target.value }))}
+                      placeholder="Nhập số điện thoại"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="newUsername">Tên đăng nhập</Label>
+                    <Input
+                      id="newUsername"
+                      value={newUserForm.username}
+                      onChange={(e) => setNewUserForm(prev => ({ ...prev, username: e.target.value }))}
+                      placeholder="Nhập tên đăng nhập"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="newName">Tên hiển thị</Label>
+                    <Input
+                      id="newName"
+                      value={newUserForm.name}
+                      onChange={(e) => setNewUserForm(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="Nhập tên hiển thị"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="newPassword">Mật khẩu</Label>
+                    <Input
+                      id="newPassword"
+                      type="password"
+                      value={newUserForm.password}
+                      onChange={(e) => setNewUserForm(prev => ({ ...prev, password: e.target.value }))}
+                      placeholder="Nhập mật khẩu"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="newRole">Vai trò</Label>
+                    <Select value={newUserForm.role} onValueChange={(value) => setNewUserForm(prev => ({ ...prev, role: value }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Chọn vai trò" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="admin">Quản trị viên</SelectItem>
+                        <SelectItem value="user">Người dùng</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setShowAddUserModal(false)}>
+                    Hủy
+                  </Button>
+                  <Button 
+                    onClick={handleCreateUser}
+                    disabled={createUserMutation.isPending}
+                    className="bg-tea-brown hover:bg-tea-brown/90"
+                  >
+                    Tạo tài khoản
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="min-w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-3 px-4 font-medium">Tên hiển thị</th>
+                  <th className="text-left py-3 px-4 font-medium">Tên đăng nhập</th>
+                  <th className="text-left py-3 px-4 font-medium">Số điện thoại</th>
+                  <th className="text-left py-3 px-4 font-medium">Vai trò</th>
+                  <th className="text-left py-3 px-4 font-medium">Ngày tạo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {allUsers.map((userItem) => (
+                  <tr key={userItem.id} className="border-b hover:bg-gray-50">
+                    <td className="py-3 px-4 font-medium">{userItem.name}</td>
+                    <td className="py-3 px-4">{userItem.username}</td>
+                    <td className="py-3 px-4">{userItem.phone}</td>
+                    <td className="py-3 px-4">
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        userItem.role === 'admin' 
+                          ? 'bg-tea-brown/10 text-tea-brown' 
+                          : 'bg-gray-100 text-gray-700'
+                      }`}>
+                        {userItem.role === 'admin' ? 'Quản trị viên' : 'Người dùng'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4">{userItem.createdAt ? formatDate(userItem.createdAt) : 'Không rõ'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Cards */}
+          <div className="md:hidden space-y-3">
+            {allUsers.map((userItem) => (
+              <div key={userItem.id} className="border rounded-lg">
+                <div 
+                  className="flex items-center justify-between p-4 cursor-pointer"
+                  onClick={() => toggleRowExpansion(userItem.id)}
+                >
+                  <div className="flex-1">
+                    <div className="font-medium">{userItem.name}</div>
+                    <div className="text-sm text-gray-600">{userItem.phone}</div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-1 rounded-full text-xs ${
+                      userItem.role === 'admin' 
+                        ? 'bg-tea-brown/10 text-tea-brown' 
+                        : 'bg-gray-100 text-gray-700'
+                    }`}>
+                      {userItem.role === 'admin' ? 'Admin' : 'User'}
+                    </span>
+                    {expandedRows.has(userItem.id) ? (
+                      <ChevronDown className="h-4 w-4 text-gray-400" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4 text-gray-400" />
+                    )}
+                  </div>
+                </div>
+                {expandedRows.has(userItem.id) && (
+                  <div className="px-4 pb-4 border-t bg-gray-50 space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Tên đăng nhập:</span>
+                      <span>{userItem.username}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Ngày tạo:</span>
+                      <span>{userItem.createdAt ? formatDate(userItem.createdAt) : 'Không rõ'}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          
+          {allUsers.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              <Users className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+              <p>Chưa có tài khoản nào</p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

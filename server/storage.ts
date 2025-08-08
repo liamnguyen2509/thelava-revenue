@@ -16,7 +16,10 @@ import { eq, and, sql, desc, isNotNull } from "drizzle-orm";
 interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
   createUser(insertUser: InsertUser): Promise<User>;
+  updateUser(id: string, updateData: Partial<{ name: string }>): Promise<User>;
+  changePassword(id: string, newPassword: string): Promise<void>;
   getRevenuesByYear(year: number): Promise<Revenue[]>;
   createRevenue(insertRevenue: InsertRevenue): Promise<Revenue>;
   upsertRevenue(insertRevenue: InsertRevenue): Promise<Revenue>;
@@ -86,12 +89,32 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(desc(users.createdAt));
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
       .values(insertUser)
       .returning();
     return user;
+  }
+
+  async updateUser(id: string, updateData: Partial<{ name: string }>): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set(updateData)
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async changePassword(id: string, newPassword: string): Promise<void> {
+    await db
+      .update(users)
+      .set({ password: newPassword })
+      .where(eq(users.id, id));
   }
 
   async getRevenuesByYear(year: number): Promise<Revenue[]> {

@@ -99,6 +99,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/auth/profile", requireAuth, async (req, res) => {
+    try {
+      const { name } = req.body;
+      if (!name || name.trim().length === 0) {
+        return res.status(400).json({ message: "Tên hiển thị không được để trống" });
+      }
+      
+      const user = await storage.updateUser((req.session as any).userId, { name: name.trim() });
+      const { password: _, ...userWithoutPassword } = user;
+      res.json({ user: userWithoutPassword });
+    } catch (error) {
+      res.status(500).json({ message: "Lỗi khi cập nhật thông tin" });
+    }
+  });
+
+  app.put("/api/auth/change-password", requireAuth, async (req, res) => {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ message: "Vui lòng điền đầy đủ thông tin" });
+      }
+      
+      if (newPassword.length < 6) {
+        return res.status(400).json({ message: "Mật khẩu mới phải có ít nhất 6 ký tự" });
+      }
+      
+      const user = await storage.getUser((req.session as any).userId);
+      if (!user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const isValidPassword = await bcrypt.compare(currentPassword, user.password);
+      if (!isValidPassword) {
+        return res.status(400).json({ message: "Mật khẩu hiện tại không đúng" });
+      }
+      
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      await storage.changePassword(user.id, hashedPassword);
+      
+      res.json({ message: "Đổi mật khẩu thành công" });
+    } catch (error) {
+      res.status(500).json({ message: "Lỗi khi đổi mật khẩu" });
+    }
+  });
+
+  // User management routes
+  app.get("/api/users", requireAuth, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      const usersWithoutPasswords = users.map(user => {
+        const { password: _, ...userWithoutPassword } = user;
+        return userWithoutPassword;
+      });
+      res.json(usersWithoutPasswords);
+    } catch (error) {
+      res.status(500).json({ message: "Lỗi khi lấy danh sách tài khoản" });
+    }
+  });
+
+  app.post("/api/users", requireAuth, async (req, res) => {
+    try {
+      const { phone, username, name, password, role = "admin" } = req.body;
+      
+      if (!phone || !username || !name || !password) {
+        return res.status(400).json({ message: "Vui lòng điền đầy đủ thông tin" });
+      }
+      
+      if (password.length < 6) {
+        return res.status(400).json({ message: "Mật khẩu phải có ít nhất 6 ký tự" });
+      }
+      
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const userData = {
+        phone: phone.trim(),
+        username: username.trim(),
+        name: name.trim(),
+        password: hashedPassword,
+        role: role || "admin"
+      };
+      
+      const user = await storage.createUser(userData);
+      const { password: _, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (error: any) {
+      console.error("Create user error:", error);
+      if (error.code === '23505') { // PostgreSQL unique constraint error
+        return res.status(400).json({ message: "Số điện thoại hoặc tên đăng nhập đã tồn tại" });
+      }
+      res.status(500).json({ message: "Lỗi khi tạo tài khoản" });
+    }
+  });
+
   // Revenue routes
   app.get("/api/revenues", requireAuth, async (req, res) => {
     try {
