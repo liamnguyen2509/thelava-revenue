@@ -28,10 +28,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Plus, Edit, Trash2, Calendar, DollarSign, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Edit, Trash2, Calendar, DollarSign, ChevronLeft, ChevronRight, CalendarIcon } from "lucide-react";
 import { useLocation } from "wouter";
+import { format } from "date-fns";
+import { vi } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 import type { SystemSetting, ExpenseCategory, Expense } from "@shared/schema";
 
 interface ExpenseFormData {
@@ -637,13 +646,45 @@ export default function MonthlyExpenses() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="expenseDate">Ngày chi (dd/mm/yyyy)</Label>
-              <Input
-                id="expenseDate"
-                type="date"
-                value={formData.expenseDate}
-                onChange={(e) => setFormData(prev => ({ ...prev, expenseDate: e.target.value }))}
-              />
+              <Label>Ngày chi</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full pl-3 text-left font-normal",
+                      !formData.expenseDate && "text-muted-foreground"
+                    )}
+                  >
+                    {formData.expenseDate ? (
+                      format(new Date(formData.expenseDate), "dd/MM/yyyy", { locale: vi })
+                    ) : (
+                      <span>Chọn ngày</span>
+                    )}
+                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={formData.expenseDate ? new Date(formData.expenseDate + 'T00:00:00') : undefined}
+                    onSelect={(date) => {
+                      if (date) {
+                        // Fix date selection issue by ensuring proper timezone handling
+                        const year = date.getFullYear();
+                        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                        const day = date.getDate().toString().padStart(2, '0');
+                        setFormData(prev => ({ ...prev, expenseDate: `${year}-${month}-${day}` }));
+                      }
+                    }}
+                    disabled={(date) =>
+                      date > new Date() || date < new Date("1900-01-01")
+                    }
+                    initialFocus
+                    locale={vi}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="space-y-2">
