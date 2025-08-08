@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ExpenseModal } from "@/components/modals/expense-modal";
-import { Calendar, Plus, Edit2 } from "lucide-react";
+import { Calendar, Plus, Edit2, ChevronDown, ChevronRight } from "lucide-react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -22,6 +22,8 @@ export default function CashFlow() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [editingRevenue, setEditingRevenue] = useState<{ month: number; amount: number } | null>(null);
+  const [expandedRevenueRows, setExpandedRevenueRows] = useState<Set<number>>(new Set());
+  const [expandedAllocationRows, setExpandedAllocationRows] = useState<Set<number>>(new Set());
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -125,6 +127,28 @@ export default function CashFlow() {
     });
   };
 
+  const toggleRevenueRowExpansion = (monthIndex: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newExpanded = new Set(expandedRevenueRows);
+    if (newExpanded.has(monthIndex)) {
+      newExpanded.delete(monthIndex);
+    } else {
+      newExpanded.add(monthIndex);
+    }
+    setExpandedRevenueRows(newExpanded);
+  };
+
+  const toggleAllocationRowExpansion = (monthIndex: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newExpanded = new Set(expandedAllocationRows);
+    if (newExpanded.has(monthIndex)) {
+      newExpanded.delete(monthIndex);
+    } else {
+      newExpanded.add(monthIndex);
+    }
+    setExpandedAllocationRows(newExpanded);
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -177,23 +201,25 @@ export default function CashFlow() {
           <p className="text-sm text-gray-600">Bảng tổng quan doanh thu và chi phí theo tháng</p>
         </CardHeader>
         <CardContent>
-          <div className="mobile-table-container">
+          <div className="overflow-x-auto">
             <table className="min-w-full">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-0 sticky left-0 bg-white z-10">Tháng</th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-0">Doanh thu</th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-0 hidden lg:table-cell">DT TB Ngày</th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-0">Lương NV</th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-0 hidden sm:table-cell">Tỷ lệ Lương</th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-0">Nguyên liệu</th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-0 hidden sm:table-cell">Tỷ lệ NPL</th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-0 hidden md:table-cell">Chi phí cố định</th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-0 hidden lg:table-cell">Tỷ lệ CP Cố định</th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-0 hidden md:table-cell">CP Phát sinh</th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-0 hidden lg:table-cell">Tỷ lệ CP Phát Sinh</th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-0">Lợi nhuận ròng</th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 sm:px-0 hidden sm:table-cell">Tỉ suất LN</th>
+                  {/* Mobile: Show expand button */}
+                  <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 md:hidden">Chi tiết</th>
+                  <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2">Tháng</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2">Doanh thu</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 hidden md:table-cell">DT TB Ngày</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 hidden md:table-cell">Lương NV</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 hidden lg:table-cell">Tỷ lệ Lương</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 hidden md:table-cell">Nguyên liệu</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 hidden lg:table-cell">Tỷ lệ NPL</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 hidden md:table-cell">Chi phí cố định</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 hidden lg:table-cell">Tỷ lệ CP Cố định</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 hidden md:table-cell">CP Phát sinh</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 hidden lg:table-cell">Tỷ lệ CP Phát Sinh</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2">Lợi nhuận ròng</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 hidden md:table-cell">Tỉ suất LN</th>
                 </tr>
               </thead>
               <tbody>
@@ -217,88 +243,138 @@ export default function CashFlow() {
                   const daysInMonth = getDaysInMonth(index + 1, selectedYear);
                   const dailyAverage = monthRevenue > 0 ? monthRevenue / daysInMonth : 0;
 
+                  const isExpanded = expandedRevenueRows.has(index);
+                  
                   return (
-                    <tr 
-                      key={index} 
-                      className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer"
-                      onClick={() => handleRowClick(index)}
-                    >
-                      <td className="py-4 text-sm font-medium text-gray-900">{month}</td>
-                      <td className="py-4 text-sm text-gray-900 text-right font-medium">
-                        <div className="flex items-center justify-end space-x-2">
-                          {editingRevenue?.month === index + 1 ? (
-                            <Input
-                              type="number"
-                              value={editingRevenue.amount}
-                              onChange={(e) => setEditingRevenue({
-                                ...editingRevenue,
-                                amount: parseFloat(e.target.value) || 0
-                              })}
-                              onBlur={() => handleRevenueUpdate(index + 1, editingRevenue.amount)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  handleRevenueUpdate(index + 1, editingRevenue.amount);
-                                }
-                                if (e.key === 'Escape') {
-                                  setEditingRevenue(null);
-                                }
-                              }}
-                              className="w-32 text-right"
-                              autoFocus
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                          ) : (
-                            <>
-                              <span>{formatCurrency(monthRevenue)}</span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleRevenueEdit(index + 1, monthRevenue);
+                    <React.Fragment key={index}>
+                      <tr 
+                        className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer"
+                        onClick={() => handleRowClick(index)}
+                      >
+                        {/* Mobile expand button */}
+                        <td className="py-4 text-sm md:hidden">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => toggleRevenueRowExpansion(index, e)}
+                            className="h-8 w-8 p-0"
+                          >
+                            {isExpanded ? 
+                              <ChevronDown className="h-4 w-4" /> : 
+                              <ChevronRight className="h-4 w-4" />
+                            }
+                          </Button>
+                        </td>
+                        <td className="py-4 text-sm font-medium text-gray-900">{month}</td>
+                        <td className="py-4 text-sm text-gray-900 text-right font-medium">
+                          <div className="flex items-center justify-end space-x-2">
+                            {editingRevenue?.month === index + 1 ? (
+                              <Input
+                                type="number"
+                                value={editingRevenue.amount}
+                                onChange={(e) => setEditingRevenue({
+                                  ...editingRevenue,
+                                  amount: parseFloat(e.target.value) || 0
+                                })}
+                                onBlur={() => handleRevenueUpdate(index + 1, editingRevenue.amount)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    handleRevenueUpdate(index + 1, editingRevenue.amount);
+                                  }
+                                  if (e.key === 'Escape') {
+                                    setEditingRevenue(null);
+                                  }
                                 }}
-                                className="h-6 w-6 p-0"
-                              >
-                                <Edit2 className="h-3 w-3" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-4 text-sm text-gray-900 text-right text-blue-600">
-                        {formatCurrency(dailyAverage)}
-                      </td>
-                      <td className="py-4 text-sm text-gray-900 text-right">
-                        {formatCurrency(staffSalary)}
-                      </td>
-                      <td className="py-4 text-sm text-gray-600 text-right">
-                        {salaryRatio}%
-                      </td>
-                      <td className="py-4 text-sm text-gray-900 text-right">
-                        {formatCurrency(ingredients)}
-                      </td>
-                      <td className="py-4 text-sm text-gray-600 text-right">
-                        {ingredientsRatio}%
-                      </td>
-                      <td className="py-4 text-sm text-gray-900 text-right">
-                        {formatCurrency(fixedExpenses)}
-                      </td>
-                      <td className="py-4 text-sm text-gray-600 text-right">
-                        {fixedRatio}%
-                      </td>
-                      <td className="py-4 text-sm text-gray-900 text-right">
-                        {formatCurrency(additionalExpenses)}
-                      </td>
-                      <td className="py-4 text-sm text-gray-600 text-right">
-                        {additionalRatio}%
-                      </td>
-                      <td className={`py-4 text-sm text-right font-medium ${netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {formatCurrency(netProfit)}
-                      </td>
-                      <td className={`py-4 text-sm text-right ${netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {profitRatio}%
-                      </td>
-                    </tr>
+                                className="w-32 text-right"
+                                autoFocus
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            ) : (
+                              <>
+                                <span>{formatCurrency(monthRevenue)}</span>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRevenueEdit(index + 1, monthRevenue);
+                                  }}
+                                  className="h-6 w-6 p-0"
+                                >
+                                  <Edit2 className="h-3 w-3" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-4 text-sm text-gray-900 text-right text-blue-600 hidden md:table-cell">
+                          {formatCurrency(dailyAverage)}
+                        </td>
+                        <td className="py-4 text-sm text-gray-900 text-right hidden md:table-cell">
+                          {formatCurrency(staffSalary)}
+                        </td>
+                        <td className="py-4 text-sm text-gray-600 text-right hidden lg:table-cell">
+                          {salaryRatio}%
+                        </td>
+                        <td className="py-4 text-sm text-gray-900 text-right hidden md:table-cell">
+                          {formatCurrency(ingredients)}
+                        </td>
+                        <td className="py-4 text-sm text-gray-600 text-right hidden lg:table-cell">
+                          {ingredientsRatio}%
+                        </td>
+                        <td className="py-4 text-sm text-gray-900 text-right hidden md:table-cell">
+                          {formatCurrency(fixedExpenses)}
+                        </td>
+                        <td className="py-4 text-sm text-gray-600 text-right hidden lg:table-cell">
+                          {fixedRatio}%
+                        </td>
+                        <td className="py-4 text-sm text-gray-900 text-right hidden md:table-cell">
+                          {formatCurrency(additionalExpenses)}
+                        </td>
+                        <td className="py-4 text-sm text-gray-600 text-right hidden lg:table-cell">
+                          {additionalRatio}%
+                        </td>
+                        <td className={`py-4 text-sm text-right font-medium ${netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {formatCurrency(netProfit)}
+                        </td>
+                        <td className={`py-4 text-sm text-right hidden md:table-cell ${netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {profitRatio}%
+                        </td>
+                      </tr>
+                      {/* Mobile expanded details */}
+                      {isExpanded && (
+                        <tr className="md:hidden bg-gray-50">
+                          <td colSpan={3} className="px-4 py-3">
+                            <div className="space-y-3 text-sm">
+                              <div className="flex justify-between">
+                                <span className="font-medium text-gray-600">DT TB Ngày:</span>
+                                <span className="text-blue-600">{formatCurrency(dailyAverage)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="font-medium text-gray-600">Lương NV:</span>
+                                <span>{formatCurrency(staffSalary)} ({salaryRatio}%)</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="font-medium text-gray-600">Nguyên liệu:</span>
+                                <span>{formatCurrency(ingredients)} ({ingredientsRatio}%)</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="font-medium text-gray-600">Chi phí cố định:</span>
+                                <span>{formatCurrency(fixedExpenses)} ({fixedRatio}%)</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="font-medium text-gray-600">CP Phát sinh:</span>
+                                <span>{formatCurrency(additionalExpenses)} ({additionalRatio}%)</span>
+                              </div>
+                              <div className="flex justify-between border-t pt-2">
+                                <span className="font-medium text-gray-600">Tỉ suất LN:</span>
+                                <span className={netProfit >= 0 ? 'text-green-600' : 'text-red-600'}>{profitRatio}%</span>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   );
                 })}
               </tbody>
@@ -318,26 +394,28 @@ export default function CashFlow() {
             <table className="min-w-full">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3">Tháng</th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">
+                  {/* Mobile: Show expand button */}
+                  <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 md:hidden">Chi tiết</th>
+                  <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2">Tháng</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 hidden md:table-cell">
                     Tái đầu tư ({getAccountPercentage("Tái đầu tư")}%)
                   </th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 hidden md:table-cell">
                     Khấu hao ({getAccountPercentage("Khấu hao")}%)
                   </th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 hidden md:table-cell">
                     Dự phòng RR ({getAccountPercentage("Dự phòng rủi ro")}%)
                   </th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 hidden md:table-cell">
                     Thưởng NV ({getAccountPercentage("Thưởng nhân viên")}%)
                   </th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 hidden md:table-cell">
                     Cổ tức ({getAccountPercentage("Cổ tức")}%)
                   </th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 hidden md:table-cell">
                     Marketing ({getAccountPercentage("Marketing")}%)
                   </th>
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3">
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2">
                     TỔNG
                   </th>
                 </tr>
@@ -370,31 +448,82 @@ export default function CashFlow() {
                                         Math.max(0, dividends) + 
                                         Math.max(0, marketing);
 
+                  const isAllocationExpanded = expandedAllocationRows.has(index);
+                  
                   return (
-                    <tr key={index} className="border-b border-gray-50">
-                      <td className="py-4 text-sm font-medium text-gray-900">{month}</td>
-                      <td className="py-4 text-sm text-gray-900 text-right">
-                        {formatCurrency(Math.max(0, reinvestment))}
-                      </td>
-                      <td className="py-4 text-sm text-gray-900 text-right">
-                        {formatCurrency(Math.max(0, depreciation))}
-                      </td>
-                      <td className="py-4 text-sm text-gray-900 text-right">
-                        {formatCurrency(Math.max(0, riskReserve))}
-                      </td>
-                      <td className="py-4 text-sm text-gray-900 text-right">
-                        {formatCurrency(Math.max(0, staffBonus))}
-                      </td>
-                      <td className="py-4 text-sm text-gray-900 text-right">
-                        {formatCurrency(Math.max(0, dividends))}
-                      </td>
-                      <td className="py-4 text-sm text-gray-900 text-right">
-                        {formatCurrency(Math.max(0, marketing))}
-                      </td>
-                      <td className="py-4 text-sm font-bold text-tea-brown text-right">
-                        {formatCurrency(totalAllocation)}
-                      </td>
-                    </tr>
+                    <React.Fragment key={index}>
+                      <tr className="border-b border-gray-50">
+                        {/* Mobile expand button */}
+                        <td className="py-4 text-sm md:hidden">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => toggleAllocationRowExpansion(index, e)}
+                            className="h-8 w-8 p-0"
+                          >
+                            {isAllocationExpanded ? 
+                              <ChevronDown className="h-4 w-4" /> : 
+                              <ChevronRight className="h-4 w-4" />
+                            }
+                          </Button>
+                        </td>
+                        <td className="py-4 text-sm font-medium text-gray-900">{month}</td>
+                        <td className="py-4 text-sm text-gray-900 text-right hidden md:table-cell">
+                          {formatCurrency(Math.max(0, reinvestment))}
+                        </td>
+                        <td className="py-4 text-sm text-gray-900 text-right hidden md:table-cell">
+                          {formatCurrency(Math.max(0, depreciation))}
+                        </td>
+                        <td className="py-4 text-sm text-gray-900 text-right hidden md:table-cell">
+                          {formatCurrency(Math.max(0, riskReserve))}
+                        </td>
+                        <td className="py-4 text-sm text-gray-900 text-right hidden md:table-cell">
+                          {formatCurrency(Math.max(0, staffBonus))}
+                        </td>
+                        <td className="py-4 text-sm text-gray-900 text-right hidden md:table-cell">
+                          {formatCurrency(Math.max(0, dividends))}
+                        </td>
+                        <td className="py-4 text-sm text-gray-900 text-right hidden md:table-cell">
+                          {formatCurrency(Math.max(0, marketing))}
+                        </td>
+                        <td className="py-4 text-sm font-bold text-tea-brown text-right">
+                          {formatCurrency(totalAllocation)}
+                        </td>
+                      </tr>
+                      {/* Mobile expanded details */}
+                      {isAllocationExpanded && (
+                        <tr className="md:hidden bg-gray-50">
+                          <td colSpan={3} className="px-4 py-3">
+                            <div className="space-y-3 text-sm">
+                              <div className="flex justify-between">
+                                <span className="font-medium text-gray-600">Tái đầu tư ({getAccountPercentage("Tái đầu tư")}%):</span>
+                                <span>{formatCurrency(Math.max(0, reinvestment))}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="font-medium text-gray-600">Khấu hao ({getAccountPercentage("Khấu hao")}%):</span>
+                                <span>{formatCurrency(Math.max(0, depreciation))}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="font-medium text-gray-600">Dự phòng RR ({getAccountPercentage("Dự phòng rủi ro")}%):</span>
+                                <span>{formatCurrency(Math.max(0, riskReserve))}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="font-medium text-gray-600">Thưởng NV ({getAccountPercentage("Thưởng nhân viên")}%):</span>
+                                <span>{formatCurrency(Math.max(0, staffBonus))}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="font-medium text-gray-600">Cổ tức ({getAccountPercentage("Cổ tức")}%):</span>
+                                <span>{formatCurrency(Math.max(0, dividends))}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="font-medium text-gray-600">Marketing ({getAccountPercentage("Marketing")}%):</span>
+                                <span>{formatCurrency(Math.max(0, marketing))}</span>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   );
                 })}
               </tbody>
