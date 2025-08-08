@@ -407,84 +407,6 @@ export default function StockOut() {
         <p className="text-gray-600 text-sm sm:text-base">Quản lý việc xuất hàng từ kho</p>
       </div>
 
-      {/* Mobile Layout: Filters, Excel/Print Buttons, and Add Button */}
-      <div className="md:hidden space-y-4 mb-6">
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <Input
-            placeholder="Tìm kiếm theo tên hàng hóa..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        
-        {/* Year and Month Filters */}
-        <div className="flex gap-2">
-          <Select value={selectedYear} onValueChange={setSelectedYear}>
-            <SelectTrigger className="flex-1">
-              <SelectValue placeholder="Chọn năm" />
-            </SelectTrigger>
-            <SelectContent>
-              {yearOptions.map((year) => (
-                <SelectItem key={year} value={year.toString()}>
-                  {year}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-            <SelectTrigger className="flex-1">
-              <SelectValue placeholder="Chọn tháng" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tất cả tháng</SelectItem>
-              {monthOptions.map((month) => (
-                <SelectItem key={month.value} value={month.value.toString()}>
-                  {month.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        
-        {/* Excel and Print Buttons */}
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={handleExportToExcel}
-            disabled={filteredTransactions.length === 0}
-            className="flex-1"
-          >
-            <FileSpreadsheet className="w-4 h-4 mr-2" />
-            Xuất Excel
-          </Button>
-          
-          <Button
-            variant="outline"
-            onClick={handlePrint}
-            disabled={selectedTransactions.length === 0}
-            className="flex-1"
-          >
-            <Printer className="w-4 h-4 mr-2" />
-            In Phiếu
-          </Button>
-        </div>
-        
-        {/* Add Button */}
-        <Button 
-          onClick={() => {
-            setEditingTransaction(null);
-            setIsTransactionModalOpen(true);
-          }}
-          className="bg-tea-brown hover:bg-tea-brown/90 w-full"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Xuất hàng mới
-        </Button>
-      </div>
 
       {/* Desktop Layout: Same as before */}
       <div className="hidden md:flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
@@ -593,6 +515,86 @@ export default function StockOut() {
       <Card>
         <CardHeader>
           <CardTitle>Lịch sử xuất kho</CardTitle>
+          
+          {/* Mobile Layout: Filters, Excel/Print Buttons, and Add Button */}
+          <div className="md:hidden space-y-4 mt-6">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                placeholder="Tìm kiếm theo tên hàng hóa..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            
+            {/* Year and Month Filters */}
+            <div className="flex gap-2">
+              <Select value={selectedYear} onValueChange={setSelectedYear}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Chọn năm" />
+                </SelectTrigger>
+                <SelectContent>
+                  {yearOptions.map((year) => (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Chọn tháng" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả tháng</SelectItem>
+                  {monthOptions.map((month) => (
+                    <SelectItem key={month.value} value={month.value.toString()}>
+                      {month.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* Excel and Print Buttons */}
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={handleExportToExcel}
+                disabled={filteredTransactions.length === 0}
+                className="flex-1"
+              >
+                <FileSpreadsheet className="w-4 h-4 mr-2" />
+                Xuất Excel
+              </Button>
+              
+              <Button
+                variant="outline"
+                onClick={handlePrint}
+                disabled={selectedTransactions.length === 0}
+                className="flex-1"
+              >
+                <Printer className="w-4 h-4 mr-2" />
+                In Phiếu
+              </Button>
+            </div>
+            
+            {/* Add Button */}
+            <Button 
+              onClick={() => {
+                setEditingTransaction(null);
+                setIsTransactionModalOpen(true);
+              }}
+              className="bg-tea-brown hover:bg-tea-brown/90 w-full"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Xuất hàng mới
+            </Button>
+          </div>
+          
           {/* Mobile Bulk Delete Button */}
           {selectedTransactions.length > 0 && (
             <div className="md:hidden mt-4">
