@@ -19,10 +19,18 @@ import {
   BarChart3,
   TrendingDown,
 } from "lucide-react";
+import type { ReserveExpenditure } from "@shared/schema";
+
+interface ExpenditureSummaryData {
+  totalExpended: number;
+  byAccount: { [key: string]: number };
+  monthlyExpenditure: { [month: number]: { [account: string]: number } };
+}
 
 export default function Dashboard() {
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const { formatMoney } = useFormattedData();
+  const currentYear = new Date().getFullYear();
 
   const { data: dashboard, isLoading } = useQuery({
     queryKey: ["/api/dashboard"],
@@ -38,6 +46,20 @@ export default function Dashboard() {
 
   const { data: allocationAccounts } = useQuery({
     queryKey: ["/api/settings/allocation-accounts"],
+  });
+
+  // Get revenues and expenses for allocation calculation
+  const { data: revenues } = useQuery({
+    queryKey: [`/api/revenues/${currentYear}`],
+  });
+
+  const { data: expenses } = useQuery({
+    queryKey: [`/api/expenses/${currentYear}`],
+  });
+
+  const { data: expenditureSummary } = useQuery<ExpenditureSummaryData>({
+    queryKey: ["/api/reserve-expenditures/summary", currentYear],
+    queryFn: () => fetch(`/api/reserve-expenditures/summary/${currentYear}`).then(res => res.json()),
   });
 
   if (isLoading) {
@@ -72,6 +94,59 @@ export default function Dashboard() {
   const calculateAllocationAmount = (accountName: string) => {
     const percentage = getAccountPercentage(accountName);
     return (currentMonthlyProfit * percentage) / 100;
+  };
+
+  // Calculate total allocations for the year based on cash flow logic
+  const calculateYearlyAllocations = () => {
+    if (!revenues || !expenses || !allocationAccounts) {
+      return {};
+    }
+
+    const yearlyAllocations: { [key: string]: number } = {};
+
+    // Calculate for each month (1-12)
+    for (let month = 1; month <= 12; month++) {
+      // Get monthly revenue
+      const monthRevenue = Array.isArray(revenues) 
+        ? revenues.find((r: any) => r.month === month)?.amount || 0 
+        : 0;
+
+      // Calculate total monthly expenses
+      const monthlyExpenses = Array.isArray(expenses)
+        ? expenses.filter((e: any) => e.month === month)
+            .reduce((sum: number, expense: any) => sum + parseFloat(expense.amount || '0'), 0)
+        : 0;
+
+      // Calculate net profit for the month
+      const netProfit = parseFloat(monthRevenue.toString()) - monthlyExpenses;
+
+      // Calculate allocations for each account
+      allocationAccounts.forEach((account: any) => {
+        if (!yearlyAllocations[account.name]) {
+          yearlyAllocations[account.name] = 0;
+        }
+        
+        const percentage = Number(account.percentage || 0);
+        const monthlyAllocation = (netProfit * percentage) / 100;
+        yearlyAllocations[account.name] += Math.max(0, monthlyAllocation);
+      });
+    }
+
+    return yearlyAllocations;
+  };
+
+  const yearlyAllocations = calculateYearlyAllocations();
+
+  // Get expenditure amount for each account
+  const getExpenditureAmount = (accountName: string) => {
+    return expenditureSummary?.byAccount?.[accountName] || 0;
+  };
+
+  // Calculate remaining amount for each account
+  const getRemainingAmount = (accountName: string) => {
+    const allocated = yearlyAllocations[accountName] || 0;
+    const expended = getExpenditureAmount(accountName);
+    return allocated - expended;
   };
 
   return (
@@ -186,23 +261,39 @@ export default function Dashboard() {
                       <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider pb-3">Mô tả</th>
                       <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider pb-3">%</th>
                       <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider pb-3">Tổng cộng</th>
+                      <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider pb-3">Tổng chi</th>
+                      <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider pb-3">Còn lại</th>
                     </tr>
                   </thead>
                   <tbody className="space-y-2">
                     {allocationAccounts && Array.isArray(allocationAccounts) && allocationAccounts.length > 0 ? (
-                      allocationAccounts.map((account: any) => (
-                        <tr key={account.id} className="border-b border-gray-50">
-                          <td className="py-3 text-sm font-medium text-gray-900">{account.name}</td>
-                          <td className="py-3 text-sm text-gray-600">{account.description}</td>
-                          <td className="py-3 text-sm text-gray-900 text-right">{account.percentage}%</td>
-                          <td className="py-3 text-sm font-medium text-gray-900 text-right">
-                            {formatMoney(calculateAllocationAmount(account.name))}
-                          </td>
-                        </tr>
-                      ))
+                      allocationAccounts.map((account: any) => {
+                        const totalAllocation = yearlyAllocations[account.name] || 0;
+                        const totalExpenditure = getExpenditureAmount(account.name);
+                        const remaining = getRemainingAmount(account.name);
+                        
+                        return (
+                          <tr key={account.id} className="border-b border-gray-50">
+                            <td className="py-3 text-sm font-medium text-gray-900">{account.name}</td>
+                            <td className="py-3 text-sm text-gray-600">{account.description}</td>
+                            <td className="py-3 text-sm text-gray-900 text-right">{account.percentage}%</td>
+                            <td className="py-3 text-sm font-medium text-gray-900 text-right">
+                              {formatMoney(totalAllocation)}
+                            </td>
+                            <td className="py-3 text-sm font-medium text-red-600 text-right">
+                              {formatMoney(totalExpenditure)}
+                            </td>
+                            <td className={`py-3 text-sm font-medium text-right ${
+                              remaining >= 0 ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              {formatMoney(remaining)}
+                            </td>
+                          </tr>
+                        );
+                      })
                     ) : (
                       <tr>
-                        <td colSpan={4} className="py-8 text-center text-gray-500">
+                        <td colSpan={6} className="py-8 text-center text-gray-500">
                           Chưa có tài khoản phân bổ nào. Vui lòng cấu hình trong mục Cài đặt.
                         </td>
                       </tr>
