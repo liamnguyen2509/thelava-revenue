@@ -1,19 +1,28 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { loginSchema, type LoginData } from "@shared/schema";
+import { loginSchema, type LoginData, type SystemSetting } from "@shared/schema";
 import { Leaf } from "lucide-react";
 
 export default function Login() {
   const { login } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Fetch system settings for logo
+  const { data: systemSettings = [] } = useQuery<SystemSetting[]>({
+    queryKey: ["/api/settings/system"],
+  });
+  
+  const logoSetting = systemSettings.find(s => s.key === "logo");
+  const logoPath = logoSetting?.value;
 
   const form = useForm<LoginData>({
     resolver: zodResolver(loginSchema),
@@ -46,9 +55,19 @@ export default function Login() {
     <div className="min-h-screen bg-gradient-to-br from-tea-cream to-tea-light/20 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-4">
-          <div className="mx-auto w-16 h-16 bg-tea-brown rounded-2xl flex items-center justify-center">
-            <Leaf className="w-8 h-8 text-white" />
-          </div>
+          {logoPath ? (
+            <div className="mx-auto w-16 h-16 rounded-2xl overflow-hidden border border-gray-200 bg-white">
+              <img 
+                src={logoPath.startsWith('http') ? logoPath : `/public-objects${logoPath.replace('/public', '')}`}
+                alt="Logo" 
+                className="w-full h-full object-contain"
+              />
+            </div>
+          ) : (
+            <div className="mx-auto w-16 h-16 bg-tea-brown rounded-2xl flex items-center justify-center">
+              <Leaf className="w-8 h-8 text-white" />
+            </div>
+          )}
           <div>
             <CardTitle className="text-2xl font-bold text-tea-brown">Tiệm Trà Lava</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">Hệ thống quản lý cửa hàng</p>

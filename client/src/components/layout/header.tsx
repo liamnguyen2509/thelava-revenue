@@ -1,7 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 import { Bell, Leaf, User, Menu } from "lucide-react";
+import type { SystemSetting } from "@shared/schema";
 
 interface HeaderProps {
   sidebarOpen: boolean;
@@ -11,6 +13,14 @@ interface HeaderProps {
 export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
   const { user, logout } = useAuth();
   const { toast } = useToast();
+  
+  // Fetch system settings for logo
+  const { data: systemSettings = [] } = useQuery<SystemSetting[]>({
+    queryKey: ["/api/settings/system"],
+  });
+  
+  const logoSetting = systemSettings.find(s => s.key === "logo");
+  const logoPath = logoSetting?.value;
 
   const handleLogout = async () => {
     try {
@@ -42,15 +52,25 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
             <Menu className="w-5 h-5 text-tea-brown" />
           </Button>
           
-          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-tea-brown rounded-lg flex items-center justify-center">
-            <Leaf className="text-white w-4 h-4 sm:w-5 sm:h-5" />
-          </div>
+          {logoPath ? (
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg overflow-hidden border border-gray-200">
+              <img 
+                src={logoPath.startsWith('http') ? logoPath : `/public-objects${logoPath.replace('/public', '')}`}
+                alt="Logo" 
+                className="w-full h-full object-contain bg-white"
+              />
+            </div>
+          ) : (
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-tea-brown rounded-lg flex items-center justify-center">
+              <Leaf className="text-white w-4 h-4 sm:w-5 sm:h-5" />
+            </div>
+          )}
           <div className="hidden sm:block">
             <h1 className="text-lg sm:text-xl font-bold text-tea-brown">Tiệm Trà Lava</h1>
             <p className="text-xs text-gray-500">Hệ thống quản lý</p>
           </div>
           <div className="sm:hidden">
-            <h1 className="text-lg font-bold text-tea-brown">Lava Tea</h1>
+            <h1 className="text-lg font-bold text-tea-brown">Tiệm Trà Lava</h1>
           </div>
         </div>
         
