@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import CashFlowChart from "@/components/charts/cash-flow-chart";
 import RevenueChart from "@/components/charts/revenue-chart";
-import ReserveExpenditureModal from "@/components/modals/reserve-expenditure-modal";
+import { ExpenseModal } from "@/components/modals/expense-modal";
 import RevenueModal from "@/components/modals/revenue-modal";
 import { useState } from "react";
 import { useFormattedData } from "@/hooks/useFormattedData";
@@ -29,7 +29,7 @@ interface ExpenditureSummaryData {
 }
 
 export default function Dashboard() {
-  const [isExpenditureModalOpen, setIsExpenditureModalOpen] = useState(false);
+  const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [isRevenueModalOpen, setIsRevenueModalOpen] = useState(false);
   const { formatMoney } = useFormattedData();
   const currentYear = new Date().getFullYear();
@@ -359,7 +359,7 @@ export default function Dashboard() {
                 <Button
                   variant="outline"
                   className="p-4 h-auto flex flex-col items-center space-y-2"
-                  onClick={() => setIsExpenditureModalOpen(true)}
+                  onClick={() => setIsExpenseModalOpen(true)}
                 >
                   <Plus className="text-tea-brown w-6 h-6" />
                   <span className="text-sm font-medium">Thêm khoản chi</span>
@@ -399,9 +399,9 @@ export default function Dashboard() {
       </div>
 
       {/* Modals */}
-      <ReserveExpenditureModal
-        open={isExpenditureModalOpen}
-        onOpenChange={setIsExpenditureModalOpen}
+      <ExpenseModal
+        isOpen={isExpenseModalOpen}
+        onClose={() => setIsExpenseModalOpen(false)}
       />
       
       <RevenueModal
