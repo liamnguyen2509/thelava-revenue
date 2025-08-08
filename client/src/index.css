@@ -112,4 +112,59 @@
   .bg-tea-cream {
     background-color: var(--tea-cream);
   }
+
+  /* Mobile-optimized styles for app-like experience */
+  .mobile-table-container {
+    @apply overflow-x-auto -mx-4 sm:mx-0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--tea-brown) transparent;
+  }
+
+  .mobile-table-container::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .mobile-table-container::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .mobile-table-container::-webkit-scrollbar-thumb {
+    background-color: var(--tea-brown);
+    border-radius: 3px;
+  }
+
+  /* Touch-friendly elements */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Mobile-specific utilities */
+  @media (max-width: 640px) {
+    .mobile-padding {
+      @apply px-4 py-3;
+    }
+
+    .mobile-text {
+      @apply text-sm;
+    }
+
+    .mobile-spacing {
+      @apply space-y-4;
+    }
+  }
+
+  /* Prevent text selection on touch devices */
+  .no-select {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  /* App-like scrolling */
+  .smooth-scroll {
+    -webkit-overflow-scrolling: touch;
+  }
 }

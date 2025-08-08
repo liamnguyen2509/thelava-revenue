@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -10,8 +10,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -20,6 +27,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { vi } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { insertExpenseSchema, type InsertExpense, type ExpenseCategory, type SystemSetting } from "@shared/schema";
@@ -53,23 +70,6 @@ export function ExpenseModal({ isOpen, onClose }: ExpenseModalProps) {
     return currencySetting?.value || "VNĐ";
   };
 
-  // Helper function to format date to dd/mm/yyyy
-  const formatDateForDisplay = (dateString: string) => {
-    const date = new Date(dateString);
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
-  };
-
-  // Helper function to convert dd/mm/yyyy to yyyy-mm-dd
-  const formatDateForInput = (dateString: string) => {
-    if (dateString.includes('/')) {
-      const [day, month, year] = dateString.split('/');
-      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-    }
-    return dateString;
-  };
 
   const form = useForm<InsertExpense>({
     resolver: zodResolver(insertExpenseSchema),
@@ -77,7 +77,7 @@ export function ExpenseModal({ isOpen, onClose }: ExpenseModalProps) {
       name: "",
       category: "",
       amount: "0",
-      expenseDate: formatDateForDisplay(new Date().toISOString()) as any,
+      expenseDate: new Date().toISOString().split('T')[0],
       status: "spent",
       notes: "",
       year: new Date().getFullYear(),
@@ -111,13 +111,12 @@ export function ExpenseModal({ isOpen, onClose }: ExpenseModalProps) {
   });
 
   const onSubmit = async (data: InsertExpense) => {
-    // Convert date from dd/mm/yyyy to yyyy-mm-dd and remove dots from amount
-    const formattedDate = formatDateForInput(data.expenseDate as string);
-    const expenseDate = new Date(formattedDate);
+    // Process data for submission
+    const expenseDate = new Date(data.expenseDate as string);
     const processedData = {
       ...data,
       amount: data.amount.toString().replace(/\./g, ''), // Remove dots for submission
-      expenseDate: formattedDate,
+      expenseDate: data.expenseDate as string,
       year: expenseDate.getFullYear(),
       month: expenseDate.getMonth() + 1,
     };
@@ -126,131 +125,189 @@ export function ExpenseModal({ isOpen, onClose }: ExpenseModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="w-full max-w-md mx-4 sm:mx-auto">
         <DialogHeader>
           <DialogTitle>Thêm chi phí mới</DialogTitle>
           <DialogDescription>
             Nhập thông tin chi phí hàng tháng cho cửa hàng trà sữa
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Tên chi phí</Label>
-            <Input
-              id="name"
-              placeholder="Nhập tên chi phí"
-              {...form.register("name")}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tên chi phí</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Nhập tên chi phí" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            {form.formState.errors.name && (
-              <p className="text-sm text-destructive">{form.formState.errors.name.message}</p>
-            )}
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="category">Loại chi phí</Label>
-            <Select onValueChange={(value) => form.setValue("category", value as any)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn loại chi phí" />
-              </SelectTrigger>
-              <SelectContent>
-                {expenseCategories.map((category) => (
-                  <SelectItem key={category.id} value={category.name}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {form.formState.errors.category && (
-              <p className="text-sm text-destructive">{form.formState.errors.category.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="amount">Số tiền ({getCurrency()})</Label>
-            <Input
-              id="amount"
-              placeholder="0"
-              {...form.register("amount")}
-              onChange={(e) => {
-                // Remove all non-digits
-                let value = e.target.value.replace(/\D/g, '');
-                // Format with dots as thousands separators
-                if (value) {
-                  value = parseInt(value).toLocaleString('vi-VN').replace(/,/g, '.');
-                }
-                form.setValue("amount", value);
-              }}
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Loại chi phí</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Chọn loại chi phí" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {expenseCategories.map((category) => (
+                        <SelectItem key={category.id} value={category.name}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            {form.formState.errors.amount && (
-              <p className="text-sm text-destructive">{form.formState.errors.amount.message}</p>
-            )}
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="expenseDate">Ngày chi phí</Label>
-            <Input
-              id="expenseDate"
-              placeholder="dd/mm/yyyy"
-              {...form.register("expenseDate")}
-              onChange={(e) => {
-                let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
-                if (value.length >= 2) {
-                  value = value.slice(0, 2) + '/' + value.slice(2);
-                }
-                if (value.length >= 5) {
-                  value = value.slice(0, 5) + '/' + value.slice(5, 9);
-                }
-                form.setValue("expenseDate", value as any);
-              }}
-              maxLength={10}
+            <FormField
+              control={form.control}
+              name="amount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Số tiền ({getCurrency()})</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="0"
+                      {...field}
+                      onChange={(e) => {
+                        // Remove all non-digits
+                        let value = e.target.value.replace(/\D/g, '');
+                        // Format with dots as thousands separators
+                        if (value) {
+                          value = parseInt(value).toLocaleString('vi-VN').replace(/,/g, '.');
+                        }
+                        field.onChange(value);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            {form.formState.errors.expenseDate && (
-              <p className="text-sm text-destructive">{form.formState.errors.expenseDate.message}</p>
-            )}
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="status">Trạng thái</Label>
-            <Select onValueChange={(value) => form.setValue("status", value as any)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn trạng thái" />
-              </SelectTrigger>
-              <SelectContent>
-                {expenseStatuses.map((status) => (
-                  <SelectItem key={status.value} value={status.value}>
-                    {status.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {form.formState.errors.status && (
-              <p className="text-sm text-destructive">{form.formState.errors.status.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="notes">Ghi chú</Label>
-            <Textarea
-              id="notes"
-              placeholder="Ghi chú thêm"
-              rows={3}
-              {...form.register("notes")}
+            <FormField
+              control={form.control}
+              name="expenseDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Ngày chi phí</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(new Date(field.value), "dd/MM/yyyy", { locale: vi })
+                          ) : (
+                            <span>Chọn ngày</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value ? new Date(field.value + 'T00:00:00') : undefined}
+                        onSelect={(date) => {
+                          if (date) {
+                            // Fix date selection issue by ensuring proper timezone handling
+                            const year = date.getFullYear();
+                            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                            const day = date.getDate().toString().padStart(2, '0');
+                            field.onChange(`${year}-${month}-${day}`);
+                          }
+                        }}
+                        disabled={(date) =>
+                          date > new Date() || date < new Date("1900-01-01")
+                        }
+                        initialFocus
+                        locale={vi}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <div className="flex space-x-3 pt-4">
-            <Button type="button" variant="outline" className="flex-1" onClick={onClose}>
-              Hủy
-            </Button>
-            <Button
-              type="submit"
-              className="flex-1 bg-tea-brown hover:bg-tea-brown/90"
-              disabled={expenseMutation.isPending}
-            >
-              {expenseMutation.isPending ? "Đang lưu..." : "Lưu"}
-            </Button>
-          </div>
-        </form>
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Trạng thái</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Chọn trạng thái" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {expenseStatuses.map((status) => (
+                        <SelectItem key={status.value} value={status.value}>
+                          {status.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Ghi chú</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Ghi chú thêm"
+                      rows={3}
+                      {...field}
+                      value={field.value || ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="flex flex-col sm:flex-row gap-3 pt-4">
+              <Button type="button" variant="outline" className="flex-1" onClick={onClose}>
+                Hủy
+              </Button>
+              <Button
+                type="submit"
+                className="flex-1 bg-tea-brown hover:bg-tea-brown/90"
+                disabled={expenseMutation.isPending}
+              >
+                {expenseMutation.isPending ? "Đang lưu..." : "Lưu"}
+              </Button>
+            </div>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

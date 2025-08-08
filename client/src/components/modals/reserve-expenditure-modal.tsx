@@ -27,10 +27,20 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { vi } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { insertReserveExpenditureSchema } from "@shared/schema";
-import type { InsertReserveExpenditure, ReserveExpenditure, AllocationAccount } from "@shared/schema";
+import type { InsertReserveExpenditure, ReserveExpenditure, AllocationAccount, SystemSetting } from "@shared/schema";
 
 interface ReserveExpenditureModalProps {
   open: boolean;
@@ -53,12 +63,12 @@ export default function ReserveExpenditureModal({
   });
 
   // Fetch system settings for currency
-  const { data: systemSettings = [] } = useQuery({
+  const { data: systemSettings = [] } = useQuery<SystemSetting[]>({
     queryKey: ["/api/settings/system"],
   });
 
   const getCurrency = () => {
-    const currencySetting = systemSettings.find((s: any) => s.key === "currency");
+    const currencySetting = systemSettings.find((s) => s.key === "currency");
     return currencySetting?.value || "VNĐ";
   };
 
@@ -73,24 +83,6 @@ export default function ReserveExpenditureModal({
     },
   });
 
-  // Helper function to format date from YYYY-MM-DD to DD/MM/YYYY
-  const formatDateForDisplay = (dateString: string) => {
-    const date = new Date(dateString);
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
-  };
-
-  // Helper function to format date from DD/MM/YYYY to YYYY-MM-DD
-  const formatDateForInput = (dateString: string) => {
-    if (dateString.includes('/')) {
-      const [day, month, year] = dateString.split('/');
-      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-    }
-    return dateString;
-  };
-
   // Helper function to format amount with dots
   const formatAmount = (amount: number) => {
     return Math.round(amount).toLocaleString('vi-VN').replace(/,/g, '.');
@@ -102,8 +94,8 @@ export default function ReserveExpenditureModal({
       form.reset({
         name: expenditure.name,
         sourceType: expenditure.sourceType,
-        amount: formatAmount(expenditure.amount), // Format with dots
-        expenditureDate: formatDateForDisplay(expenditure.expenditureDate),
+        amount: formatAmount(parseFloat(expenditure.amount.toString())), // Format with dots
+        expenditureDate: expenditure.expenditureDate,
         notes: expenditure.notes ?? "",
       });
     } else {
@@ -111,7 +103,7 @@ export default function ReserveExpenditureModal({
         name: "",
         sourceType: "",
         amount: "",
-        expenditureDate: formatDateForDisplay(new Date().toISOString()),
+        expenditureDate: new Date().toISOString().split('T')[0],
         notes: "",
       });
     }
@@ -166,11 +158,11 @@ export default function ReserveExpenditureModal({
   });
 
   const onSubmit = (data: InsertReserveExpenditure) => {
-    // Convert date from DD/MM/YYYY to YYYY-MM-DD format and amount to number
+    // Process data for submission
     const formattedData = {
       ...data,
       amount: data.amount.replace(/\./g, ''), // Remove dots for submission
-      expenditureDate: formatDateForInput(data.expenditureDate),
+      expenditureDate: data.expenditureDate,
     };
     
     if (isEditing) {
@@ -184,7 +176,7 @@ export default function ReserveExpenditureModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="w-full max-w-lg mx-4 sm:mx-auto">
         <DialogHeader>
           <DialogTitle>
             {isEditing ? "Chỉnh sửa khoản chi" : "Thêm khoản chi"}
@@ -254,11 +246,6 @@ export default function ReserveExpenditureModal({
                         }
                         field.onChange(value);
                       }}
-                      onBlur={(e) => {
-                        // Convert formatted value back to number for form validation
-                        const numericValue = e.target.value.replace(/\./g, '');
-                        field.onChange(numericValue);
-                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -272,23 +259,46 @@ export default function ReserveExpenditureModal({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Ngày chi</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="dd/mm/yyyy"
-                      {...field}
-                      onChange={(e) => {
-                        let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
-                        if (value.length >= 2) {
-                          value = value.slice(0, 2) + '/' + value.slice(2);
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(new Date(field.value), "dd/MM/yyyy", { locale: vi })
+                          ) : (
+                            <span>Chọn ngày</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value ? new Date(field.value + 'T00:00:00') : undefined}
+                        onSelect={(date) => {
+                          if (date) {
+                            // Fix date selection issue by ensuring proper timezone handling
+                            const year = date.getFullYear();
+                            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                            const day = date.getDate().toString().padStart(2, '0');
+                            field.onChange(`${year}-${month}-${day}`);
+                          }
+                        }}
+                        disabled={(date) =>
+                          date > new Date() || date < new Date("1900-01-01")
                         }
-                        if (value.length >= 5) {
-                          value = value.slice(0, 5) + '/' + value.slice(5, 9);
-                        }
-                        field.onChange(value);
-                      }}
-                      maxLength={10}
-                    />
-                  </FormControl>
+                        initialFocus
+                        locale={vi}
+                      />
+                    </PopoverContent>
+                  </Popover>
                   <FormMessage />
                 </FormItem>
               )}
@@ -313,7 +323,7 @@ export default function ReserveExpenditureModal({
               )}
             />
 
-            <div className="flex justify-end space-x-2">
+            <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-2">
               <Button
                 type="button"
                 variant="outline"

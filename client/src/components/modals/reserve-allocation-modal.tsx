@@ -29,7 +29,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { insertReserveAllocationSchema } from "@shared/schema";
-import type { InsertReserveAllocation, AllocationAccount } from "@shared/schema";
+import type { InsertReserveAllocation, AllocationAccount, SystemSetting } from "@shared/schema";
 
 interface ReserveAllocationModalProps {
   open: boolean;
@@ -49,12 +49,12 @@ export default function ReserveAllocationModal({
   });
 
   // Fetch system settings for currency
-  const { data: systemSettings = [] } = useQuery({
+  const { data: systemSettings = [] } = useQuery<SystemSetting[]>({
     queryKey: ["/api/settings/system"],
   });
 
   const getCurrency = () => {
-    const currencySetting = systemSettings.find((s: any) => s.key === "currency");
+    const currencySetting = systemSettings.find((s) => s.key === "currency");
     return currencySetting?.value || "VNĐ";
   };
 
