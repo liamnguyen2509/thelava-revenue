@@ -159,7 +159,7 @@ export default function CashFlow() {
     updateRevenueMutation.mutate({
       month: month,
       year: selectedYear,
-      amount: newAmount,
+      amount: newAmount.toString(), // Convert to string for database
     });
   };
 
