@@ -244,7 +244,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/stock/transactions", requireAuth, async (req, res) => {
     try {
-      const transactions = await storage.getStockTransactions();
+      const { itemId } = req.query;
+      const transactions = await storage.getStockTransactions(itemId as string);
       res.json(transactions);
     } catch (error) {
       res.status(500).json({ message: "Lỗi khi lấy lịch sử giao dịch kho" });
@@ -258,6 +259,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(transaction);
     } catch (error) {
       res.status(400).json({ message: "Dữ liệu giao dịch không hợp lệ" });
+    }
+  });
+
+  // Stock summary route
+  app.get("/api/stock/summary", requireAuth, async (req, res) => {
+    try {
+      const summary = await storage.getStockSummary();
+      res.json(summary);
+    } catch (error) {
+      res.status(500).json({ message: "Lỗi khi lấy tổng quan kho" });
+    }
+  });
+
+  // Update stock item
+  app.put("/api/stock/items/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updateData = insertStockItemSchema.partial().parse(req.body);
+      const item = await storage.updateStockItem(id, updateData);
+      res.json(item);
+    } catch (error) {
+      res.status(400).json({ message: "Lỗi khi cập nhật hàng hóa" });
+    }
+  });
+
+  // Delete stock item
+  app.delete("/api/stock/items/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteStockItem(id);
+      res.json({ message: "Đã xóa hàng hóa thành công" });
+    } catch (error) {
+      res.status(500).json({ message: "Lỗi khi xóa hàng hóa" });
     }
   });
 

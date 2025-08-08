@@ -28,8 +28,12 @@ interface IStorage {
   getExpenseSummary(): Promise<{ monthly: number }>;
   getStockItems(): Promise<StockItem[]>;
   createStockItem(insertStockItem: InsertStockItem): Promise<StockItem>;
-  getStockTransactions(): Promise<StockTransaction[]>;
+  updateStockItem(id: string, updateData: Partial<InsertStockItem>): Promise<StockItem>;
+  deleteStockItem(id: string): Promise<void>;
+  getStockTransactions(itemId?: string): Promise<StockTransaction[]>;
   createStockTransaction(insertStockTransaction: InsertStockTransaction): Promise<StockTransaction>;
+  updateStockAfterTransaction(itemId: string, quantity: number, type: 'in' | 'out'): Promise<void>;
+  getStockSummary(): Promise<{ totalItems: number; lowStockItems: number; totalValue: number }>;
   getAllocationAccounts(): Promise<AllocationAccount[]>;
   createAllocationAccount(insertAllocationAccount: InsertAllocationAccount): Promise<AllocationAccount>;
   getReserveAllocations(year: number, month?: number): Promise<ReserveAllocation[]>;
@@ -256,8 +260,27 @@ export class DatabaseStorage implements IStorage {
     return item;
   }
 
-  async getStockTransactions(): Promise<StockTransaction[]> {
-    return await db.select().from(stockTransactions);
+  async updateStockItem(id: string, updateData: Partial<InsertStockItem>): Promise<StockItem> {
+    const [item] = await db
+      .update(stockItems)
+      .set(updateData)
+      .where(eq(stockItems.id, id))
+      .returning();
+    return item;
+  }
+
+  async deleteStockItem(id: string): Promise<void> {
+    await db
+      .update(stockItems)
+      .set({ isActive: false })
+      .where(eq(stockItems.id, id));
+  }
+
+  async getStockTransactions(itemId?: string): Promise<StockTransaction[]> {
+    if (itemId) {
+      return await db.select().from(stockTransactions).where(eq(stockTransactions.itemId, itemId));
+    }
+    return await db.select().from(stockTransactions).orderBy(desc(stockTransactions.createdAt));
   }
 
   async createStockTransaction(insertStockTransaction: InsertStockTransaction): Promise<StockTransaction> {
@@ -265,7 +288,60 @@ export class DatabaseStorage implements IStorage {
       .insert(stockTransactions)
       .values(insertStockTransaction)
       .returning();
+    
+    // Update stock levels after transaction
+    if (transaction.itemId) {
+      await this.updateStockAfterTransaction(
+        transaction.itemId,
+        parseFloat(transaction.quantity),
+        transaction.type as 'in' | 'out'
+      );
+    }
+    
     return transaction;
+  }
+
+  async updateStockAfterTransaction(itemId: string, quantity: number, type: 'in' | 'out'): Promise<void> {
+    const [item] = await db.select().from(stockItems).where(eq(stockItems.id, itemId));
+    if (!item) return;
+
+    const currentStock = parseFloat(item.currentStock);
+    const newStock = type === 'in' ? currentStock + quantity : currentStock - quantity;
+    
+    await db
+      .update(stockItems)
+      .set({ currentStock: newStock.toString() })
+      .where(eq(stockItems.id, itemId));
+  }
+
+  async getStockSummary(): Promise<{ totalItems: number; lowStockItems: number; totalValue: number }> {
+    const items = await db.select().from(stockItems).where(eq(stockItems.isActive, true));
+    
+    const totalItems = items.length;
+    const lowStockItems = items.filter(item => 
+      parseFloat(item.currentStock) <= parseFloat(item.minStock)
+    ).length;
+    
+    // Calculate total value (for items that have recent transactions with prices)
+    const transactions = await db.select().from(stockTransactions)
+      .where(sql`${stockTransactions.unitPrice} IS NOT NULL`);
+    
+    const totalValue = items.reduce((total, item) => {
+      const recentTransaction = transactions
+        .filter(t => t.itemId === item.id)
+        .sort((a, b) => {
+          const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return dateB - dateA;
+        })[0];
+      
+      if (recentTransaction && recentTransaction.unitPrice) {
+        return total + (parseFloat(item.currentStock) * parseFloat(recentTransaction.unitPrice));
+      }
+      return total;
+    }, 0);
+    
+    return { totalItems, lowStockItems, totalValue };
   }
 
   async getAllocationAccounts(): Promise<AllocationAccount[]> {
