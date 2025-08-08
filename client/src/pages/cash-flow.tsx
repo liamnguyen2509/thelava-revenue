@@ -121,6 +121,8 @@ export default function CashFlow() {
       return res.json();
     },
     onSuccess: () => {
+      // Invalidate both specific year query and generic revenues query
+      queryClient.invalidateQueries({ queryKey: [`/api/revenues/${selectedYear}`] });
       queryClient.invalidateQueries({ queryKey: ["/api/revenues"] });
       toast({
         title: "Thành công",
@@ -159,7 +161,7 @@ export default function CashFlow() {
     updateRevenueMutation.mutate({
       month: month,
       year: selectedYear,
-      amount: newAmount.toString(), // Convert to string for database
+      amount: newAmount,
     });
   };
 
